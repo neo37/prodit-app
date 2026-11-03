@@ -1,0 +1,23 @@
+# сборки
+build/
+build-play/
+gradle-build/build/
+gradle-build/.gradle/
+dist/
+site/
+*.apk
+*.aab
+*.idsig
+__pycache__/
+# секреты — никогда в git
+*.keystore
+*keystore.properties
+admob.properties
+.ftp.env
+fcm-service-account.json
+google-services.json*
+
+# календарь: фирменные шрифты (коммерческие) и локальные настройки
+meet/web/fonts/
+meet/.meet_key
+meet/.visit.env
