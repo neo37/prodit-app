@@ -1,0 +1,139 @@
+<!doctype html>
+<!-- Фон темы «Аврора»: живая 3D-сцена (three.js r149, MIT) под полупрозрачными карточками приложения.
+     Переливающиеся стеклянные шары и тор плавают, при наклоне телефона — лёгкий параллакс. -->
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#120E33}
+body{background:linear-gradient(160deg,#1B1446 0%,#2A2F8F 45%,#3B1F6B 75%,#0E0E22 100%)}
+canvas{display:block;position:fixed;inset:0;width:100%;height:100%}
+/* мягкое свечение поверх сцены — как размытые обои iOS */
+#glow{position:fixed;inset:-20%;pointer-events:none;
+  background:radial-gradient(40% 30% at 20% 25%,rgba(124,136,252,.45),transparent 70%),
+             radial-gradient(35% 30% at 85% 80%,rgba(255,133,98,.35),transparent 70%),
+             radial-gradient(30% 25% at 70% 20%,rgba(94,234,212,.22),transparent 70%)}
+</style></head>
+<body><div id="glow"></div>
+<script src="three.min.js"></script>
+<script>
+(function () {
+  if (!window.THREE) return;
+  var W = innerWidth, H = innerHeight;
+  var renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'low-power' });
+  } catch (e) { return; } // нет WebGL — остаётся градиент
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
+  renderer.setSize(W, H);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  document.body.insertBefore(renderer.domElement, document.getElementById('glow'));
+
+  renderer.toneMappingExposure = 0.95;
+  var scene = new THREE.Scene();
+
+  var camera = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+  camera.position.set(0, 0, 14);
+
+  // свет в цветах темы: фиолетовый, коралловый, бирюзовый
+  scene.add(new THREE.AmbientLight(0xffffff, 0.15));
+  var lights = [[0x7C88FC, -6, 6, 6], [0xFF8562, 6, -4, 5], [0x5EEAD4, 4, 6, -2]].map(function (l) {
+    var p = new THREE.PointLight(l[0], 1.4, 40);
+    p.position.set(l[1], l[2], l[3]);
+    scene.add(p);
+    return p;
+  });
+
+  // стекло: прозрачный центр, светящаяся кромка (Френель), радужный отлив и резкий блик
+  var glassVS = [
+    'varying vec3 vN; varying vec3 vV;',
+    'void main(){',
+    '  vec4 mv = modelViewMatrix * vec4(position,1.0);',
+    '  vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);',
+    '  gl_Position = projectionMatrix * mv; }'].join('\n');
+  var glassFS = [
+    'uniform vec3 tint; uniform float time;',
+    'varying vec3 vN; varying vec3 vV;',
+    'vec3 rainbow(float t){ return 0.5 + 0.5*cos(6.2831*(vec3(0.0,0.33,0.67)+t)); }',
+    'void main(){',
+    '  vec3 n = normalize(vN); vec3 v = normalize(vV);',
+    '  float f = pow(1.0 - max(dot(n, v), 0.0), 2.2);',
+    '  vec3 irid = rainbow(f*0.9 + n.y*0.25 + time*0.03);',
+    '  vec3 col = mix(tint, irid, 0.45*f) + vec3(1.0)*0.35*f;',
+    '  vec3 L = normalize(vec3(-0.4, 0.8, 0.6));',
+    '  float spec = pow(max(dot(reflect(-L, n), v), 0.0), 70.0);',
+    '  float spec2 = pow(max(dot(reflect(-normalize(vec3(0.7,-0.5,0.5)), n), v), 0.0), 30.0)*0.35;',
+    '  float a = 0.06 + 0.7*f + spec + spec2;',
+    '  gl_FragColor = vec4(col + vec3(spec + spec2), clamp(a, 0.0, 0.95)); }'].join('\n');
+  var mats = [];
+  function glass(color) {
+    var m = new THREE.ShaderMaterial({
+      uniforms: { tint: { value: new THREE.Color(color) }, time: { value: 0 } },
+      vertexShader: glassVS, fragmentShader: glassFS,
+      transparent: true, depthWrite: false, side: THREE.FrontSide
+    });
+    mats.push(m);
+    return m;
+  }
+
+  var group = new THREE.Group();
+  scene.add(group);
+  var blobs = [];
+  var spec = [ // радиус, x, y, z, цвет
+    [1.6, -2.4, 3.4, -2, 0x6E7BFF], [1.0, 2.6, 2.0, 0, 0xFF7A59], [2.0, 2.4, -3.2, -4, 0x8A5CFF],
+    [0.7, -2.2, -1.0, 1.5, 0x3FE0C5], [0.8, 0.6, 5.4, -3, 0xC9D0FF], [0.5, 3.2, -0.4, 2.5, 0xFF9A6B]
+  ];
+  spec.forEach(function (s, i) {
+    var m = new THREE.Mesh(new THREE.SphereGeometry(s[0], 48, 32), glass(s[4]));
+    m.position.set(s[1], s[2], s[3]);
+    m.userData = { base: m.position.clone(), speed: 0.25 + i * 0.07, phase: i * 1.7 };
+    group.add(m);
+    blobs.push(m);
+  });
+  // стеклянный тор — «3D-элемент» в центре композиции
+  var torus = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.42, 48, 120), glass(0xB9C2FF));
+  torus.position.set(-1.6, -4.2, -1);
+  group.add(torus);
+
+  // параллакс от наклона телефона (как обои iPhone)
+  var tx = 0, ty = 0, px = 0, py = 0;
+  addEventListener('deviceorientation', function (e) {
+    if (e.gamma == null) return;
+    tx = Math.max(-1, Math.min(1, e.gamma / 30));
+    ty = Math.max(-1, Math.min(1, (e.beta - 45) / 30));
+  });
+
+  var running = true, last = 0, t0 = performance.now();
+  window.pauseScene = function (p) { running = !p; if (running) requestAnimationFrame(loop); };
+  function loop(now) {
+    if (!running) return;
+    requestAnimationFrame(loop);
+    if (now - last < 33) return; // ~30 кадров/с — бережём батарею
+    last = now;
+    var t = (now - t0) / 1000;
+    blobs.forEach(function (m) {
+      var u = m.userData;
+      m.position.x = u.base.x + Math.sin(t * u.speed + u.phase) * 0.5;
+      m.position.y = u.base.y + Math.cos(t * u.speed * 0.8 + u.phase) * 0.6;
+      m.rotation.y = t * 0.2;
+    });
+    mats.forEach(function (m) { m.uniforms.time.value = t; });
+    torus.rotation.x = t * 0.35;
+    torus.rotation.y = t * 0.22;
+    lights[0].position.x = -6 + Math.sin(t * 0.3) * 2;
+    lights[1].position.y = -4 + Math.cos(t * 0.25) * 2;
+    px += (tx - px) * 0.05;
+    py += (ty - py) * 0.05;
+    group.rotation.y = px * 0.25;
+    group.rotation.x = py * 0.15;
+    renderer.render(scene, camera);
+  }
+  requestAnimationFrame(loop);
+  addEventListener('resize', function () {
+    W = innerWidth; H = innerHeight;
+    camera.aspect = W / H; camera.updateProjectionMatrix();
+    renderer.setSize(W, H);
+  });
+})();
+</script>
+</body></html>

@@ -1,0 +1,84 @@
+<!doctype html><html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Обучение: 3D-ведущая (маскот Алисы, assets/tour/alisa.glb) на прозрачном фоне. three.js — из встроенной игры. -->
+<script type="importmap">{"imports":{"three":"../game/vendor/three/build/three.module.js","three/addons/":"../game/vendor/three/examples/jsm/"}}</script>
+<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}canvas{display:block;width:100%;height:100%}</style>
+</head><body><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+
+const canvas = document.getElementById('c');
+const r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+r.setClearColor(0x000000, 0);
+r.setPixelRatio(Math.min(2, devicePixelRatio));
+r.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(2, 4, 5); scene.add(key);
+const rim = new THREE.DirectionalLight(0xf7b83d, 1.4); rim.position.set(-3, 2, -3); scene.add(rim);   // янтарь темы
+const cam = new THREE.PerspectiveCamera(30, 1, 0.01, 100);
+// клипы модели по смыслу
+const CLIPS = { walk: 'Walking', talk: 'Sitting_Answering_Questions', point: 'Skill_03', dance: 'All_Night_Dance',
+  skip: 'Skip_Forward', arise: 'Arise' };
+const RANDOM = ['talk', 'point', 'dance', 'skip', 'arise'];   // на месте — каждый раз что-то новое
+let mixer = null, actions = {}, current = null, model = null, hips = null, hipsRest = null, last = '', yaw = -0.3, yawTo = -0.3;
+const clock = new THREE.Clock();
+
+function fit() {
+  const w = innerWidth, h = innerHeight;
+  r.setSize(w, h, false);
+  cam.aspect = w / h;
+  cam.updateProjectionMatrix();
+}
+addEventListener('resize', fit);
+fit();
+
+function play(name) {
+  const a = actions[CLIPS[name] || name];
+  if (!a || a === current) return;
+  a.reset().setEffectiveWeight(1).fadeIn(0.35).play();
+  if (current) current.fadeOut(0.35);
+  current = a;
+  last = name;
+}
+function random() {
+  const pool = RANDOM.filter((n) => n !== last);
+  play(pool[Math.floor(Math.random() * pool.length)]);
+  yawTo = (Math.random() - 0.5) * 0.9;   // немного повернуться к зрителю
+}
+/** dir: -1 — идёт влево, 1 — вправо, 0 — лицом к зрителю */
+function face(dir) { yawTo = dir === 0 ? 0 : dir * 1.2; }
+window.tour = { play, random, face };
+
+new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).load('alisa.glb', (g) => {
+  model = g.scene;
+  model.traverse((o) => { if (o.isMesh) o.frustumCulled = false; if (o.isBone && !hips && /hips/i.test(o.name)) hips = o; });
+  scene.add(model);
+  model.updateMatrixWorld(true);
+  const b = new THREE.Box3().setFromObject(model, true);
+  const h = b.max.y - b.min.y, cy = (b.max.y + b.min.y) / 2;
+  model.position.y -= b.min.y;           // ноги на нижней кромке
+  cam.position.set(0, h * 0.52, h * 2.35);
+  cam.lookAt(0, h * 0.5, 0);
+  hipsRest = hips ? hips.position.clone() : null;
+  mixer = new THREE.AnimationMixer(model);
+  for (const c of g.animations) actions[c.name] = mixer.clipAction(c);
+  play('arise');
+  setTimeout(random, 1600);
+  if (window.AndroidTour) window.AndroidTour.ready();
+});
+
+(function loop() {
+  requestAnimationFrame(loop);
+  const dt = Math.min(0.05, clock.getDelta());
+  if (mixer) mixer.update(dt);
+  if (hips && hipsRest) { hips.position.x = hipsRest.x; hips.position.z = hipsRest.z; }   // ходьба на месте
+  if (model) {
+    yaw += (yawTo - yaw) * Math.min(1, dt * 6);
+    model.rotation.y = yaw;
+  }
+  r.render(scene, cam);
+})();
+</script></body></html>

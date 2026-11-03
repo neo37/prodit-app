@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Хвосты — Алиса и её друзья из Герцег-Нови</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>.footer-note{display:none}</style></head>
+<body>
+<div class="waves"></div>
+
+<main id="menu">
+  <div class="brand-tail">🦊</div>
+  <h1 class="title">Хвосты</h1>
+  <p class="subtitle" id="subtitle"></p>
+  <p class="pitch" id="pitch"></p>
+
+  <section class="panel">
+    <h2>Где играть</h2>
+    <p class="hint">Движок — открытый Tower Defense на three.js (MIT), мир и герои — наши.</p>
+    <div class="cards">
+      <a class="card" href="play.html?level=1">
+        <span class="who"><span class="name">🎀 Хвосты: набережная</span><span class="home">играть</span></span>
+        <span class="about">Наши анимированные модели, десять мест Герцег-Нови и волны без конца.
+          Ставь подружек на плиты и не пускай тени к домику с хвостиками.</span>
+        <span class="swatch" style="background:#ffd447"></span>
+      </a>
+      <a class="card" href="viewer/own.html">
+        <span class="who"><span class="name">📦 Свои модели</span><span class="home">.glb</span></span>
+        <span class="about">Перетащи свой .glb — посмотри модель и анимации, прежде чем ставить её
+          в игру. Файлы читаются прямо в браузере.</span>
+        <span class="swatch" style="background:#8fd0ff"></span>
+      </a>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Уровни</h2>
+    <p class="hint">Пройди место — откроется следующее. Волны идут одна за другой, конца им нет.</p>
+    <div class="cards" id="levels"></div>
+  </section>
+
+  <div class="tips" id="tips"></div>
+  <p class="footer-note">Локально: <code>python3 -m http.server 8790</code> в этой папке. Есть ещё <a href="td/index.html">версия на готовом движке</a> — там всё то же, но модели статичные.</p>
+</main>
+
+<script type="module">
+import { GAME, TIPS } from './src/lore.js';
+import { LEVELS, progress } from './src/levels.js';
+const $ = (id) => document.getElementById(id);
+$('subtitle').textContent = GAME.subtitle;
+$('pitch').textContent = GAME.pitch;
+$('tips').innerHTML = TIPS.map((t) => `<span>${t}</span>`).join('');
+$('levels').innerHTML = LEVELS.map((l) => {
+  const open = l.id <= progress.unlocked;
+  const best = progress.best(l.id);
+  const inner = `
+    <span class="who"><span class="name">${open ? l.name : '🔒 ' + l.name}</span><span class="home">${l.id}</span></span>
+    <span class="about">${open ? l.hint : 'откроется, когда пройдёшь предыдущее'}</span>
+    <span class="swatch" style="background:${open ? '#ffd447' : '#3a4a58'}"></span>
+    ${best ? `<span class="about">рекорд: волна ${best}</span>` : ''}`;
+  return open
+    ? `<a class="card" href="play.html?level=${l.id}">${inner}</a>`
+    : `<div class="card" style="opacity:.5">${inner}</div>`;
+}).join('');
+
+</script>
+</body>
+</html>

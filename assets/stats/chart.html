@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!-- Мини-дашборд кнопки главного экрана: столбики за 7 дней (Chart.js, MIT, локально). Данные — из приложения через draw(). -->
+<script src="chart.umd.min.js"></script>
+<style>html,body{margin:0;height:100%;background:transparent;overflow:hidden}canvas{display:block}</style>
+</head><body><canvas id="c"></canvas>
+<script>
+let chart = null;
+window.draw = function (labels, values, color, ink, grid) {
+  const ctx = document.getElementById('c');
+  ctx.width = innerWidth; ctx.height = innerHeight;
+  const data = { labels, datasets: [{ data: values, backgroundColor: color, borderRadius: 4, maxBarThickness: 18 }] };
+  const opts = { responsive: false, animation: { duration: 500 }, plugins: { legend: { display: false }, tooltip: { enabled: false } },
+    layout: { padding: { top: 4, right: 2, bottom: 0, left: 0 } },
+    scales: { x: { grid: { display: false }, ticks: { color: ink, font: { size: 10 } }, border: { display: false } },
+              y: { beginAtZero: true, grid: { color: grid }, ticks: { color: ink, font: { size: 9 }, maxTicksLimit: 3, precision: 0 }, border: { display: false } } } };
+  if (chart) { chart.data = data; chart.update(); } else chart = new Chart(ctx, { type: 'bar', data, options: opts });
+};
+</script></body></html>

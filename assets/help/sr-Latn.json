@@ -1,0 +1,99 @@
+[
+{"id":"chat","icon":"💬","title":"Opšti čet","lead":"Čet je srce aplikacije: razgovor svih korisnika, video snimci prijatelja i pozivi.","items":[
+"Otvorite ga velikim dugmetom „Čet” na početnom ekranu. Broj pokazuje nove poruke.",
+"Pišite u polje na dnu i pritisnite ➤. Pre prve poruke aplikacija traži da prihvatite pravila zajednice.",
+"Dugi pritisak na tuđu poruku otvara meni: piši lično, pozovi, dodaj u kontakte, prijavi ili blokiraj autora.",
+"Dugi pritisak na svoju poruku — obriši je.",
+"Ako poruka ima video, pritisnite „▶ Gledaj” i otvoriće se u plejeru. Ako ima izvor, možete ga dodati jednim dodirom.",
+"Nove poruke su istaknute. Kada je aplikacija umanjena, stiže obaveštenje.",
+"Budite pristojni: prekršaj možete prijaviti, a autora blokirati — njegove poruke vam nestaju."]},
+{"id":"dm","icon":"✉","title":"Lične poruke","lead":"Lične poruke su razgovor u dvoje: vidite ih samo vi i sagovornik.","items":[
+"Dugme ✉ na početnom ekranu i u četu otvara razgovore. Broj pokazuje nepročitane.",
+"Novi razgovor: dodirnite autora u opštem četu ili izaberite osobu u „Kontaktima”.",
+"Pošaljite prijatelju svoj link „piši mi” u bilo kom mesindžeru — odmah otvara razgovor sa vama.",
+"Dugi pritisak na poruku — obriši, prijavi ili blokiraj sagovornika.",
+"Odgovori podrške stižu ovde — od „Smart Player”."]},
+{"id":"call","icon":"📞","title":"Pozivi","lead":"Poziv je video soba u pregledaču — bez registracije i lozinki.","items":[
+"U razgovoru ili meniju poruke pritisnite 📞 „Pozovi”. Sagovornik dobija dolazni poziv.",
+"Pritisnite „📞 U poziv” — soba se otvara; dozvolite kameru i mikrofon.",
+"Ako ste sami u sobi, link ne morate slati: sagovornik dobija obaveštenje sa dugmetom „U poziv”.",
+"Propušten poziv stiže kao obaveštenje — možete uzvratiti."]},
+{"id":"contacts","icon":"👥","title":"Kontakti","lead":"Kontakti su vaš imenik ljudi iz aplikacije.","items":[
+"☰ → ⋯ Još → „Kontakti”. Kartice: „Moji kontakti” i „Svi korisnici” sa pretragom po imenu.",
+"Ljude dodajete iz opšteg četa, razgovora ili liste svih korisnika.",
+"Dugi pritisak na kontakt — preimenuj ili ukloni.",
+"Iz kontakta možete odmah pisati ili pozvati."]},
+{"id":"notif","icon":"🔔","title":"Obaveštenja","lead":"Obaveštenja javljaju o ličnim porukama, pozivima, opštem četu i komentarima na vaše snimke.","items":[
+"Dozvolite obaveštenja pri prvom pokretanju — inače ih Android neće prikazati.",
+"Ikonica aplikacije pokazuje broj nepročitanih.",
+"U „Podešavanjima” → „Obaveštenja” uključite ili isključite: lične poruke i pozive, opšti čet.",
+"Nema obaveštenja? Proverite da nisu isključena za Smart Player u podešavanjima Androida."]},
+{"id":"player","icon":"▶","title":"Video plejer i izvori","lead":"Plejer skuplja video snimke sa telefona, sa magicbtn.online i povezanih sajtova u jednu listu.","items":[
+"Dugme „Video plejer” na početnom ekranu. Gore su kartice izvora: „Telefon”, magicbtn.online i vaši.",
+"„＋ Dodaj izvor” — magicbtn.online ili bilo koji sajt sa fajlom video_api.php (vidi „Vaš sajt”).",
+"Dugi pritisak na izvor — izmeni ili ukloni. Snimci na serveru se ne brišu.",
+"Sortiranje: najnovije, najstarije, po imenu, najveće, popularne, najkomentarisanije.",
+"Nepotrebne fascikle izvora možete isključiti — nestaju iz liste.",
+"Snimke sa telefona možete obrisati direktno iz aplikacije."]},
+{"id":"view","icon":"👆","title":"Gledanje: pokreti i dugmad","lead":"U plejeru sve radi pokretima i dugmadima desno.","items":[
+"Prevucite levo ili desno za sledeći ili prethodni video. Prevucite nadole za izlaz.",
+"Dvostruki dodir uz levu ili desnu ivicu — premotavanje 10 sekundi; više dodira se sabira.",
+"Dvostruki dodir u sredini fotografije — uvećanje; štipanje sa dva prsta — zum.",
+"Jedan dodir — pauza i kontrole.",
+"Desno: ♥ sviđa mi se, 💬 komentari, ↗ podeli, 🗑 obriši svoje, 🚩 prijavi.",
+"Plejer pamti gde ste stali i sledeći put nastavlja odatle.",
+"⋮ gore — redosled (redom, izmešaj, popularno), interval fotografija, link na video i uređivač."]},
+{"id":"rec","icon":"⏺","title":"Slajdšou i „Moja gledanja”","lead":"Snimanje gledanja pretvara vaš slajdšou u gotov video.","items":[
+"U plejeru pritisnite ⏺ — počinje snimanje. Listajte, uvećavajte, premotavajte — sve se snima.",
+"👎 tokom snimanja — ovaj fajl neće ući u video. Ponovo pritisnite da ga vratite.",
+"Ponovo ⏺ — snimanje je zaustavljeno.",
+"☰ → ⋯ Još → „Moja gledanja” → „Napravi video”. Pravi se na telefonu i čuva u galeriji.",
+"Aplikaciju možete umanjiti dok se pravi — obaveštenje pokazuje „Pravim snimak…”.",
+"Snimanje radi i u slajdšou „Oflajn” kada se prikazuje jedna fascikla."]},
+{"id":"edit","icon":"✂","title":"Uređivač: isecanje videa","lead":"Uređivač iseca višak iz videa — dok gledate ili snimate.","items":[
+"⋮ → „Uređivač: iseci video”. Tokom snimanja slajdšoua uređivač se uključuje sam.",
+"Okvir oko slike: zeleni — kadar ostaje, crveni — iseca se.",
+"„✂ Iseci” — od ovog kadra nadalje sve se iseca, okvir postaje crven.",
+"„↩ Poništi isecanje” — od ovog kadra nadalje sve ostaje, okvir je zelen.",
+"−1 s i +1 s — precizno premotavanje. Vratite se i okvir pokazuje status tog kadra — odatle možete ponovo označiti.",
+"„💾 Sačuvaj” pravi isečeni video i čuva ga u galeriji. U „Mojim gledanjima” isečeni delovi takođe ne ulaze u video."]},
+{"id":"share","icon":"↗","title":"Deljenje videa","lead":"Svoj video možete poslati u opšti čet ili lično — bez kompresije.","items":[
+"U plejeru pritisnite ↗ ili izaberite „Podeli” → „Smart Player” u galeriji telefona.",
+"Izaberite opšti čet ili osobu iz kontakata. Pre slanja u opšti čet aplikacija traži potvrdu.",
+"Video do 500 MB šalje se u delovima i nastavlja pri lošoj vezi. Aplikaciju možete umanjiti.",
+"Primalac vidi dugme „▶ Gledaj”. Fajl se sam briše posle 30 dana."]},
+{"id":"offline","icon":"💾","title":"Oflajn","lead":"Plejer čuva pogledano da biste gledali bez interneta.","items":[
+"☰ → ⋯ Još → „Oflajn · slajdšou” — sve sačuvano: fotografije i video snimci.",
+"Šta se čuva podešava se u „Podešavanjima”: sve pogledano, samo omiljeno ili ništa.",
+"Nema veze — plejer sam prikazuje sačuvano.",
+"Slajdšou: jedna fascikla ili više odjednom na podeljenom ekranu. Dodir — pauza, prevlačenje nadole — izlaz.",
+"Fajl možete obrisati i tokom slajdšoua."]},
+{"id":"my","icon":"⬆","title":"Moj izvor","lead":"Moj izvor je vaša fascikla na magicbtn.online za deljenje vaših snimaka i fotografija.","items":[
+"☰ → ⋯ Još → „Moj izvor” → „Napravi svoj izvor”.",
+"Otpremite video snimke i fotografije — ograničenja su prikazana na ekranu.",
+"„💬 Podeli u četu” — drugi dodaju vaš izvor jednim dodirom.",
+"„Obriši izvor za sve” briše fasciklu sa svim fajlovima sa servera."]},
+{"id":"host","icon":"🌐","title":"Vaš sajt → izvor","lead":"Svaki hosting sa video snimcima može postati izvor za plejer.","items":[
+"☰ → ⋯ Još → „Vaš sajt → izvor” — aplikacija daje fajl video_api.php (ili verziju na Pythonu) i uputstvo.",
+"Stavite fajl na hosting pored fascikli sa snimcima i upišite svoj ključ.",
+"U plejeru „＋ Dodaj izvor” → adresa sajta i ključ. Svaka fascikla postaje odeljak."]},
+{"id":"game","icon":"🎲","title":"Igra","lead":"Igra je dobra odbrana kula za decu i odrasle, bez reklama i bez interneta.","items":[
+"Dugme „Igra” na početnom ekranu odmah otvara vaš nivo.",
+"Postavljajte drugarice na put repatim gostima i prelazite nivoe.",
+"Izlaz — 🏠 u igri ili dugme „Nazad” na telefonu."]},
+{"id":"stats","icon":"📊","title":"Statistika","lead":"Dugmad početnog ekrana mogu prikazati statistiku — jednostavne nedeljne grafikone.","items":[
+"Ispod „Čet”, „Video plejer” ili „Igra” pritisnite „📊 Prikupljaj statistiku”.",
+"„🔄 Osveži” pokazuje grafikon: koliko ste pisali, gledali ili koliko minuta igrali.",
+"Statistika se čuva samo na vašem telefonu."]},
+{"id":"menu","icon":"⚙","title":"Meni, podešavanja i teme","lead":"Sve ređe je u meniju ☰ i pod „⋯ Još”.","items":[
+"☰ na vrhu početnog ekrana: profil i često korišćeno gore, ostalo pod „⋯ Još”.",
+"Profil (dodirnite svoje ime u meniju): ime, avatar, jezik aplikacije i tema.",
+"„Podešavanja”: lozinka za ulaz (i otisak prsta), preuzimanje za oflajn, skladište, obaveštenja.",
+"Lozinka se traži pri pokretanju i posle 30 sekundi u pozadini.",
+"„Tema” — pet izgleda, menja se odmah.",
+"Ažuriranja: aplikacija sama nudi novu verziju."]},
+{"id":"idea","icon":"💡","title":"Ideje i podrška","lead":"Nešto nedostaje ili se pokvarilo — pišite mi, čitam svaki zahtev.","items":[
+"☰ → ⋯ Još → „Predloži ideju”. Dugme 🎲 predlaže ideju ako ne znate odakle da počnete.",
+"Odgovor stiže u lične poruke od „Smart Player”.",
+"„Pomoć” na početnom ekranu uvek otvara ovaj odeljak."]}
+]

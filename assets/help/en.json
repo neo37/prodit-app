@@ -1,0 +1,99 @@
+[
+{"id":"chat","icon":"💬","title":"Group chat","lead":"The chat is the heart of the app: a conversation of all users, friends' videos and calls.","items":[
+"Open it with the big “Chat” button on the home screen. The number shows new messages.",
+"Type in the field at the bottom and tap ➤. Before your first message the app asks you to accept the community rules.",
+"Long-press someone else's message for a menu: write privately, call, add to contacts, report or block the author.",
+"Long-press your own message to delete it.",
+"If a message has a video, tap “▶ Watch” to open it in the player. If it has a source, you can add it with one tap.",
+"New messages are highlighted. When the app is minimised, you get a notification.",
+"Be polite: you can report a violation and block the author — their messages disappear for you."]},
+{"id":"dm","icon":"✉","title":"Direct messages","lead":"Direct messages are a conversation for two: only you and the other person see it.","items":[
+"The ✉ button on the home screen and in the chat opens your conversations. The number shows unread ones.",
+"New conversation: tap an author in the group chat or pick a person in “Contacts”.",
+"Send your “write to me” link to a friend in any messenger — it opens a conversation with you right away.",
+"Long-press a message to delete it, report it or block the person.",
+"Support replies come here too — from “Smart Player”."]},
+{"id":"call","icon":"📞","title":"Calls","lead":"A call is a video room in the browser — no sign-up, no passwords.","items":[
+"In a conversation or a message menu tap 📞 “Call”. The other person gets an incoming call.",
+"Tap “📞 Join call” — the room opens; allow camera and microphone.",
+"If you are alone in the room, no need to send the link: the other person gets a notification with a “Join call” button.",
+"A missed call arrives as a notification — you can call back."]},
+{"id":"contacts","icon":"👥","title":"Contacts","lead":"Contacts are your address book of people in the app.","items":[
+"☰ → ⋯ More → “Contacts”. Tabs: “My contacts” and “All users” with search by name.",
+"Add people from the group chat, a conversation or the list of all users.",
+"Long-press a contact to rename or remove it.",
+"From a contact you can write or call right away."]},
+{"id":"notif","icon":"🔔","title":"Notifications","lead":"Notifications tell you about direct messages, calls, the group chat and comments on your videos.","items":[
+"Allow notifications at first launch — otherwise Android will not show them.",
+"The app icon shows the number of unread messages.",
+"In “Settings” → “Notifications” turn on or off: direct messages and calls, the group chat.",
+"No notifications? Check they are not turned off for Smart Player in Android settings."]},
+{"id":"player","icon":"▶","title":"Video player and sources","lead":"The player gathers videos from your phone, magicbtn.online and connected sites into one feed.","items":[
+"The “Video player” button on the home screen. At the top are source tabs: “Phone”, magicbtn.online and yours.",
+"“＋ Add a source” — magicbtn.online or any site with the video_api.php file (see “Your site”).",
+"Long-press a source to edit or remove it. Videos on the server are not deleted.",
+"Sorting: newest, oldest, by name, largest, popular, most discussed.",
+"Unneeded folders of a source can be turned off — they disappear from the feed.",
+"Phone videos can be deleted right from the app."]},
+{"id":"view","icon":"👆","title":"Watching: gestures and buttons","lead":"In the player everything works with gestures and the buttons on the right.","items":[
+"Swipe left or right for the next or previous video. Swipe down to exit.",
+"Double-tap near the left or right edge to skip 10 seconds; several taps in a row add up.",
+"Double-tap the centre of a photo to zoom; pinch with two fingers to zoom too.",
+"A single tap pauses and shows the controls.",
+"On the right: ♥ like, 💬 comments, ↗ share, 🗑 delete your own, 🚩 report.",
+"The player remembers where you stopped and continues from there next time.",
+"⋮ at the top — order (in a row, shuffle, popular), photo interval, video link and the editor."]},
+{"id":"rec","icon":"⏺","title":"Slideshow and “My views”","lead":"Viewing recording turns your slideshow into a ready video.","items":[
+"In the player tap ⏺ to start recording. Swipe, zoom, skip — everything is recorded.",
+"👎 while recording — this file will not go into the video. Tap again to bring it back.",
+"⏺ again stops the recording.",
+"☰ → ⋯ More → “My views” → “Make video”. It is made on the phone and saved to the gallery.",
+"You can minimise the app while it is being made — the notification shows “Making a video…”.",
+"Recording also works in the Offline slideshow when one folder is shown."]},
+{"id":"edit","icon":"✂","title":"Editor: trimming video","lead":"The editor cuts unwanted parts of a video — right while watching or recording.","items":[
+"⋮ → “Editor: trim video”. While recording a slideshow the editor turns on by itself.",
+"The frame around the picture: green — the frame stays, red — it is cut.",
+"“✂ Cut” — from this frame onwards everything is cut, the frame turns red.",
+"“↩ Undo cut” — from this frame onwards everything stays, the frame is green.",
+"−1 s and +1 s step precisely. Go back and the frame shows the status that frame had — you can re-mark from there.",
+"“💾 Save” makes the trimmed video and saves it to the gallery. In “My views” the cut parts do not go into the video either."]},
+{"id":"share","icon":"↗","title":"Sharing a video","lead":"You can send your video to the group chat or privately — without compression.","items":[
+"In the player tap ↗, or choose “Share” → “Smart Player” in your phone gallery.",
+"Choose the group chat or a person from contacts. Before posting to the group chat the app asks you to confirm.",
+"Videos up to 500 MB upload in chunks and resume on a bad connection. You can minimise the app.",
+"The recipient sees a “▶ Watch” button. The file deletes itself after 30 days."]},
+{"id":"offline","icon":"💾","title":"Offline","lead":"The player saves what you watched so you can watch without internet.","items":[
+"☰ → ⋯ More → “Offline · slideshow” — everything saved: photos and videos.",
+"What to save is set in “Settings”: everything watched, only liked, or nothing.",
+"No connection — the player shows saved files by itself.",
+"Slideshow: one folder or several at once on a split screen. Tap to pause, swipe down to exit.",
+"A file can be deleted right during the slideshow."]},
+{"id":"my","icon":"⬆","title":"My source","lead":"My source is your folder on magicbtn.online for showing your videos and photos to others.","items":[
+"☰ → ⋯ More → “My source” → “Create my source”.",
+"Upload videos and photos — the limits are shown on the screen.",
+"“💬 Share in chat” — others add your source with one tap.",
+"“Delete source for everyone” removes the folder with all files from the server."]},
+{"id":"host","icon":"🌐","title":"Your site → source","lead":"Any hosting with videos can become a source for the player.","items":[
+"☰ → ⋯ More → “Your site → source” — the app gives you video_api.php (or a Python version) and instructions.",
+"Put the file on your hosting next to the video folders and set your key in it.",
+"In the player “＋ Add a source” → site address and key. Every folder becomes a section."]},
+{"id":"game","icon":"🎲","title":"Game","lead":"The game is a kind tower defence for kids and adults, with no ads and no internet needed.","items":[
+"The “Game” button on the home screen opens your level right away.",
+"Place the friends on the path of the tailed guests and complete the levels.",
+"Exit with 🏠 in the game or the phone's Back button."]},
+{"id":"stats","icon":"📊","title":"Statistics","lead":"The home screen buttons can show statistics — simple weekly charts.","items":[
+"Under “Chat”, “Video player” or “Game” tap “📊 Collect statistics”.",
+"“🔄 Refresh” shows a chart: how much you wrote, watched or how many minutes you played.",
+"Statistics are kept only on your phone."]},
+{"id":"menu","icon":"⚙","title":"Menu, settings and themes","lead":"Everything rare is in the ☰ menu and under “⋯ More”.","items":[
+"☰ at the top of the home screen: profile and frequent items on top, the rest under “⋯ More”.",
+"Profile (tap your name in the menu): name, avatar, app language and theme.",
+"“Settings”: app password (and fingerprint), offline downloads, storage, notifications.",
+"The password is asked at launch and after 30 seconds in the background.",
+"“Theme” — five looks, switches instantly.",
+"Updates: the app offers a new version by itself."]},
+{"id":"idea","icon":"💡","title":"Ideas and support","lead":"Missing something or something broke — write to me, I read every request.","items":[
+"☰ → ⋯ More → “Suggest an idea”. The 🎲 button suggests an idea if you don't know where to start.",
+"The reply comes to your direct messages from “Smart Player”.",
+"“Help” on the home screen always opens this section."]}
+]

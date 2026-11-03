@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Свои модели — просмотр GLB</title>
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="viewer.css">
+<script type="importmap">
+{ "imports": {
+    "three": "../vendor/three/build/three.module.js",
+    "three/addons/": "../vendor/three/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+
+<div id="app">
+
+  <aside id="sidebar">
+    <header class="side-head">
+      <h1>Свои модели <a class="toplink" href="../index.html">← Хвосты</a></h1>
+      <p class="muted"><span id="clip-count">файлы никуда не уходят — всё читается в браузере</span></p>
+      <label class="ghost file-pick">
+        ＋ Выбрать GLB
+        <input id="file" type="file" accept=".glb,.gltf,model/gltf-binary,model/gltf+json" multiple hidden>
+      </label>
+      <div id="files"></div>
+      <div class="search">
+        <input id="search" type="search" placeholder="Поиск по анимациям" autocomplete="off" spellcheck="false">
+        <button id="search-clear" title="Очистить" hidden>✕</button>
+      </div>
+    </header>
+    <nav id="clip-list" aria-label="Список анимаций"></nav>
+    <footer class="side-foot">
+      <button id="btn-random" class="ghost">🎲 Случайная</button>
+      <button id="btn-queue" class="ghost" aria-pressed="false">▶ Всё подряд</button>
+    </footer>
+  </aside>
+
+  <main id="stage">
+    <canvas id="scene"></canvas>
+
+    <div id="drop">
+      <div class="drop-box">
+        <div class="drop-icon">⬇</div>
+        <b>Перетащи сюда .glb</b>
+        <p class="muted">или нажми «Выбрать GLB» слева. Можно сразу несколько файлов:
+           первый с мешем станет моделью, анимации из остальных подставятся на её скелет,
+           если имена костей совпадают.</p>
+        <p id="drop-error" class="err" hidden></p>
+      </div>
+    </div>
+
+    <div id="loader" class="done">
+      <div class="spinner"></div>
+      <div id="loader-text">Загрузка модели…</div>
+      <div class="bar"><i id="loader-bar"></i></div>
+    </div>
+
+    <div id="hud-top">
+      <div id="now-playing">
+        <b id="np-name">—</b>
+        <span id="np-meta" class="muted"></span>
+      </div>
+      <div class="hud-buttons">
+        <button id="btn-inplace" class="chip" aria-pressed="true" title="Не давать модели уезжать из кадра">На месте</button>
+        <button id="btn-rotate" class="chip" aria-pressed="false" title="Автовращение камеры">Вращение</button>
+        <button id="btn-grid" class="chip" aria-pressed="true" title="Пол и сетка">Пол</button>
+        <button id="btn-skeleton" class="chip" aria-pressed="false" title="Показать скелет">Скелет</button>
+        <button id="btn-full" class="chip" title="Во весь экран">⛶</button>
+      </div>
+    </div>
+
+    <div id="transport">
+      <button id="btn-play" class="play" title="Пробел">⏸</button>
+      <div class="track">
+        <input id="seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Позиция в клипе">
+        <div class="times"><span id="t-cur">0.0</span><span id="t-dur">0.0</span></div>
+      </div>
+      <label class="speed">
+        Скорость <b id="speed-val">1.0×</b>
+        <input id="speed" type="range" min="10" max="200" value="100" step="5" aria-label="Скорость">
+      </label>
+    </div>
+
+    <div id="hint" class="muted">Пробел — пауза · ← → — соседний клип · R — камера · перетаскивание — поворот</div>
+  </main>
+
+</div>
+
+<script type="module" src="own.js"></script>
+</body>
+</html>
