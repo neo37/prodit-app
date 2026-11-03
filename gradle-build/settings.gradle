@@ -1,0 +1,11 @@
+pluginManagement {
+    repositories { google(); mavenCentral(); gradlePluginPortal() }
+}
+dependencyResolutionManagement {
+    repositories {
+        google(); mavenCentral()
+        // LiveKit (Production IT): переключение аудио audioswitch есть только на JitPack — берём оттуда только его
+        maven { url 'https://jitpack.io'; content { includeGroup 'com.github.davidliu' } }
+    }
+}
+rootProject.name = 'smart-player'

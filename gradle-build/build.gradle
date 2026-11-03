@@ -1,0 +1,136 @@
+// Сборка «Умного плеера» через Gradle (с 3.4 — из-за Firebase Cloud Messaging).
+// Исходники остаются на прежних местах: ../src, ../res, ../assets, ../AndroidManifest.xml.
+//   site — APK для сайта и обновлений по воздуху: пакет online.eyetrick.hnarchive, targetSdk 35, ключ release.keystore
+//   play — AAB для Google Play: пакет online.magicbtn.player, targetSdk 36, ключ загрузки play-upload.keystore
+// Пуши: если рядом лежит ../google-services.json (Firebase), его ключи попадают в ресурсы fcm_*; нет файла — пушей нет,
+// работает прежняя проверка лички раз в 15 мин.
+plugins {
+    id 'com.android.application' version '8.13.0'
+    // Production IT: экран звонка LiveKit и Centrifugo — на Kotlin (src/prodit/java); плееру Kotlin-код не попадает
+    id 'org.jetbrains.kotlin.android' version '2.2.21'
+}
+
+def root = file('..')
+def mf = new File(root, 'AndroidManifest.xml').text
+def code = (mf =~ /android:versionCode="(\d+)"/)[0][1] as int
+def name = (mf =~ /android:versionName="([^"]+)"/)[0][1]
+// AGP 8 не принимает package/versionCode/uses-sdk в манифесте исходников — даём ему очищенную копию
+def genMf = file("$buildDir/gen-manifest/AndroidManifest.xml")
+genMf.parentFile.mkdirs()
+genMf.text = mf.replaceAll(/\s+package="[^"]+"/, '').replaceAll(/\s+android:versionCode="\d+"/, '')
+        .replaceAll(/\s+android:versionName="[^"]+"/, '').replaceAll(/\s*<uses-sdk[^>]*\/>/, '')
+
+def props = { f -> def p = new Properties(); def ff = new File(root, f); if (ff.exists()) ff.withInputStream { p.load(it) }; p }
+def ks = props('keystore.properties'), pks = props('play-keystore.properties'), prk = props('prodit-keystore.properties')
+// AdMob: ../admob.properties (ADMOB_APP_ID, ADMOB_REWARDED_ID). Нет файла — тестовый app id Google (SDK без него
+// падает при запуске) и пустой блок: кнопка «Pro за рекламу» скрыта.
+def ad = props('admob.properties')
+def prv = props('prodit/version.properties')
+
+// ключи Firebase для пакета варианта (google-services.json без плагина Google — читаем сами)
+def gsFile = new File(root, 'google-services.json')
+def gs = gsFile.exists() ? new groovy.json.JsonSlurper().parse(gsFile) : null
+def fcm = { String pkg ->
+    def c = gs?.client?.find { it.client_info?.android_client_info?.package_name == pkg }
+    [app: c?.client_info?.mobilesdk_app_id ?: '', key: c?.api_key?.getAt(0)?.current_key ?: '',
+     project: gs?.project_info?.project_id ?: '', sender: gs?.project_info?.project_number ?: '']
+}
+
+android {
+    namespace 'online.magicbtn.player'
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+        versionCode code
+        versionName name
+        manifestPlaceholders = [admobAppId: ad.ADMOB_APP_ID ?: 'ca-app-pub-3940256099942544~3347511713']
+        resValue 'string', 'admob_rewarded_id', ad.ADMOB_REWARDED_ID ?: ''
+    }
+    buildFeatures { buildConfig true; resValues true }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_11; targetCompatibility JavaVersion.VERSION_11 }
+    kotlinOptions { jvmTarget = '11' }
+    sourceSets.main {
+        manifest.srcFile genMf
+        java.srcDirs = [new File(root, 'src')]
+        res.srcDirs = [new File(root, 'res')]
+        assets.srcDirs = [new File(root, 'assets')]
+    }
+    signingConfigs {
+        site { storeFile new File(root, 'release.keystore'); storePassword ks.KS_PASS; keyAlias 'hn'; keyPassword ks.KS_PASS }
+        play { storeFile new File(root, 'play-upload.keystore'); storePassword pks.PLAY_KS_PASS; keyAlias 'upload'; keyPassword pks.PLAY_KS_PASS }
+        prodit { storeFile new File(root, 'prodit-upload.keystore'); storePassword prk.PRODIT_KS_PASS; keyAlias 'upload'; keyPassword prk.PRODIT_KS_PASS }
+    }
+    flavorDimensions = ['store']
+    productFlavors {
+        site {
+            dimension 'store'
+            applicationId 'online.eyetrick.hnarchive'
+            targetSdk 35
+            buildConfigField 'boolean', 'PLAY', 'false'
+            buildConfigField 'boolean', 'PRODIT', 'false'
+            signingConfig signingConfigs.site
+        }
+        play {
+            dimension 'store'
+            applicationId 'online.magicbtn.player'
+            targetSdk 36
+            buildConfigField 'boolean', 'PLAY', 'true'
+            buildConfigField 'boolean', 'PRODIT', 'false'
+            signingConfig signingConfigs.play
+        }
+        // Production IT: чат 1:1 по email, встречи spacecode.business/meet, звонки LiveKit. Версия — своя (prodit/version.properties)
+        prodit {
+            dimension 'store'
+            applicationId 'com.prodit.meet'
+            targetSdk 36
+            versionCode prv.CODE as int
+            versionName prv.NAME
+            buildConfigField 'boolean', 'PLAY', 'true'
+            buildConfigField 'boolean', 'PRODIT', 'true'
+            signingConfig signingConfigs.prodit
+        }
+    }
+    productFlavors.all { f ->
+        def k = fcm(f.applicationId)
+        f.resValue 'string', 'fcm_app_id', k.app
+        f.resValue 'string', 'fcm_api_key', k.key
+        f.resValue 'string', 'fcm_project_id', k.project
+        f.resValue 'string', 'fcm_sender_id', k.sender
+    }
+    buildTypes {
+        release {
+            minifyEnabled true   // R8: сжатие и обфускация (Google Play: «DEX code optimization»)
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    lint { abortOnError false; checkReleaseBuilds false }
+    packaging { resources { excludes += ['META-INF/*.version', 'META-INF/*.kotlin_module'] } }
+}
+
+dependencies {
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    // 3.4: склейка «Моих просмотров» слайдшоу в один ролик (обрезка, фото, зум) — прямо на телефоне
+    implementation 'androidx.media3:media3-transformer:1.5.1'
+    implementation 'androidx.media3:media3-effect:1.5.1'
+    implementation 'androidx.media3:media3-common:1.5.1'
+    // 3.4.1: игра «Хвосты» из assets без интернета (WebViewAssetLoader)
+    implementation 'androidx.webkit:webkit:1.12.1'
+    // покупки Google Play — выключены вместе с монетизацией (legacy-build/monetization; при включении — Billing ≥ 8.0.0)
+    // implementation 'com.android.billingclient:billing:8.0.0'
+    // 3.6: «Pro за просмотр рекламы» — выключено вместе с монетизацией (вернуть с legacy-build/monetization/AdPro.java):
+    // implementation 'com.google.android.gms:play-services-ads:23.6.0'
+    // implementation 'com.google.android.ump:user-messaging-platform:3.1.0'
+    // 3.6: предложить обновиться из Google Play (окно Play «Доступно обновление»)
+    implementation 'com.google.android.play:app-update:2.1.0'
+    // Production IT: звонки (LiveKit Android SDK, Apache-2.0) и мгновенная доставка (Centrifugo, MIT) — только в этой сборке
+    proditImplementation 'io.livekit:livekit-android:2.30.0'
+    proditImplementation 'io.github.centrifugal:centrifuge-java:0.8.0'
+}
+
+// Production IT: ресурсы плеера (игра, подсказки с Алисой, справка, 3D-фон) в эту сборку не кладём
+tasks.matching { it.name ==~ /mergeProdit\w*Assets/ }.configureEach { t ->
+    t.doLast {
+        ['game', 'tour', 'glass', 'help', 'hosting', 'stats'].each { d -> project.delete(new File(t.outputDir.get().asFile, d)) }
+    }
+}
