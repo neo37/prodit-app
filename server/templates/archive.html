@@ -1,0 +1,405 @@
+{% extends "core/base.html" %}
+{% load static %}
+
+{% block title %}Архив фото и видео — Герцег Нови{% endblock %}
+{% block meta_description %}Архив фотографий и видео из Герцег Нови. Смотри работы участников заданий.{% endblock %}
+
+{% block extra_css %}
+<style>
+  .archive-hero { background: #000; color: var(--accent); padding: 24px 20px; }
+  .archive-hero h1 { font-size: 28px; font-weight: 900; margin: 0 0 4px; }
+  .archive-hero p { font-size: 13px; color: #aaa; margin: 0; }
+  .archive-hero-links { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .archive-hero-links a { color: #FFE500; font-size: 13px; font-weight: 700; text-decoration: none; border: 1px solid #FFE500; border-radius: 20px; padding: 3px 12px; }
+  .archive-filters { padding: 12px 16px; border-bottom: 2px solid #000; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .arch-filter { border: 2px solid #000; border-radius: 20px; padding: 4px 14px; font-size: 13px; font-weight: 700; cursor: pointer; background: #fff; }
+  .arch-filter.active { background: #000; color: #fff; }
+  .archive-grid { padding: 12px; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; }
+  @media(min-width:600px){ .archive-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); } }
+  .arch-item { position: relative; border: 2px solid #000; border-radius: 6px; overflow: hidden; box-shadow: 3px 3px 0 #000; background: #fff; cursor: pointer; transition: transform .1s; }
+  .arch-item:hover { transform: translate(-1px,-1px); box-shadow: 4px 4px 0 #000; }
+  .arch-thumb { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #f0f0f0; }
+  .arch-thumb-video { position: relative; width: 100%; aspect-ratio: 1; background: #111; overflow: hidden; }
+  .arch-thumb-video video.arch-thumb { width: 100%; height: 100%; aspect-ratio: 1; object-fit: cover; display: block; }
+  .arch-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 52px; height: 52px; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); border: 2px solid #fff; border-radius: 50%; color: #fff; font-size: 20px; padding-left: 3px; pointer-events: none; }
+  .arch-meta { padding: 8px 10px; border-top: 1.5px solid #eee; }
+  .arch-name { font-size: 12px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .arch-type { font-size: 10px; color: #888; margin-top: 2px; }
+  .arch-del-btn { position: absolute; top: 6px; right: 6px; width: 28px; height: 28px; background: rgba(255,255,255,.92); border: 2px solid #000; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 14px; cursor: pointer; opacity: 0; transition: opacity .15s; z-index: 10; padding: 0; }
+  .arch-item:hover .arch-del-btn { opacity: 1; }
+  .arch-move-btn { position: absolute; top: 6px; left: 6px; height: 28px; background: rgba(255,230,0,.95); border: 2px solid #000; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; cursor: pointer; opacity: 0; transition: opacity .15s; z-index: 10; padding: 0 5px; gap:3px; }
+  .arch-item:hover .arch-move-btn { opacity: 1; }
+  .arch-move-btn2 { top: 40px; background: rgba(180,180,255,.95); }
+  /* lightbox */
+  .lightbox { position: fixed; inset: 0; z-index: 9000; background: rgba(0,0,0,.9); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .2s; }
+  .lightbox.open { opacity: 1; pointer-events: all; }
+  .lightbox-close { position: absolute; top: 16px; right: 20px; color: #fff; font-size: 32px; cursor: pointer; z-index: 1; line-height: 1; }
+  .lightbox img, .lightbox video { max-width: 90vw; max-height: 85vh; border: 3px solid #fff; border-radius: 6px; }
+  .lightbox-caption { position: absolute; bottom: 20px; left: 0; right: 0; text-align: center; color: #fff; font-size: 14px; font-weight: 600; }
+  /* slideshow */
+  .ss-bg { display:none; position:fixed; inset:0; background:#000; z-index:9500; flex-direction:column; align-items:center; justify-content:center; }
+  .ss-bg.open { display:flex; }
+  .ss-close { position:fixed; top:16px; right:18px; width:40px; height:40px; background:#FFE500; border:2px solid #000; box-shadow:3px 3px 0 #fff; display:flex; align-items:center; justify-content:center; cursor:pointer; color:#000; font-size:1.2rem; font-weight:700; z-index:9510; line-height:1; }
+  .ss-nav { position:fixed; top:50%; transform:translateY(-50%); width:52px; height:52px; background:#FFE500; border:2px solid #000; box-shadow:3px 3px 0 #fff; display:none; align-items:center; justify-content:center; cursor:pointer; color:#000; font-size:1.8rem; font-weight:900; z-index:9510; }
+  .ss-prev { left:10px; }
+  .ss-next { right:10px; }
+  .ss-counter { position:fixed; top:16px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.65); color:#fff; padding:4px 14px; font-size:.8rem; font-weight:700; z-index:9510; border:1px solid rgba(255,255,255,.2); white-space:nowrap; border-radius:20px; max-width:60vw; text-align:center; }
+  .ss-actions { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); display:none; gap:8px; z-index:9510; }
+  .ss-actions.open { display:flex; }
+  .ss-act-btn { height:36px; padding:0 14px; background:#FFE500; border:2px solid #000; box-shadow:2px 2px 0 #fff; font-weight:700; font-size:.8rem; cursor:pointer; white-space:nowrap; }
+  .ss-media-wrap { width:100%; height:100%; display:flex; align-items:center; justify-content:center; }
+  .ss-media-wrap video { max-width:100vw; max-height:100vh; object-fit:contain; display:block; }
+  .ss-media-wrap img { max-width:100vw; max-height:100vh; object-fit:contain; display:block; }
+  .ss-bar { position:fixed; bottom:0; left:0; right:0; height:3px; background:rgba(255,255,255,.2); z-index:9510; }
+  .ss-bar-fill { height:100%; background:#FFE500; }
+  .btn-slideshow { display:inline-flex; align-items:center; gap:6px; border:2px solid #000; border-radius:20px; padding:4px 14px; font-size:13px; font-weight:700; cursor:pointer; background:#FFE500; color:#000; }
+  /* delete modal */
+  .del-modal { display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,.7); align-items:center; justify-content:center; }
+  .del-modal.open { display:flex; }
+  .del-box { background:#fff; border:3px solid #000; box-shadow:6px 6px 0 #000; padding:24px; min-width:280px; max-width:90vw; }
+  .del-box h3 { margin:0 0 12px; font-size:18px; font-weight:900; }
+  .del-box input { width:100%; border:2px solid #000; padding:8px 10px; font-size:16px; margin-bottom:8px; box-sizing:border-box; font-family:inherit; }
+  .del-error { color:#c00; font-size:13px; min-height:18px; margin-bottom:8px; }
+  .del-btns { display:flex; gap:8px; }
+  .del-btns button { flex:1; padding:10px; border:2px solid #000; font-weight:700; cursor:pointer; font-size:14px; font-family:inherit; }
+  .del-btn-ok { background:#FFE500; }
+  .del-btn-cancel { background:#fff; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="archive-hero">
+  <h1>📸 <span data-i18n="nav_archive">Архив</span></h1>
+  <p>Герцег Нови через глаза участников</p>
+  <div class="archive-hero-links">
+    <a href="/archive2">Архив 2 →</a>
+    <a href="/archive3">🌐 Публичный →</a>
+  </div>
+</div>
+
+<div class="archive-filters">
+  <button class="arch-filter active" data-type="" onclick="setType(this,'')">Все</button>
+  <button class="arch-filter" data-type="image" onclick="setType(this,'image')">📷 Фото</button>
+  <button class="arch-filter" data-type="video" onclick="setType(this,'video')">🎥 Видео</button>
+  <button class="btn-slideshow" onclick="ssStart()">▶ Слайдшоу</button>
+</div>
+
+<div class="archive-grid" id="archive-grid">
+  {% for item in items %}
+  {% with ftype=item.file_type|default:"" fname=item.file_name|default:"" %}
+  {% with caption=item.username|default:item.first_name|default:"Аноним" %}
+  <div class="arch-item"
+       data-type="{% if 'video' in ftype or fname|lower|slice:'-4:' == '.mp4' or fname|lower|slice:'-4:' == '.mov' %}video{% else %}image{% endif %}"
+       data-url="/media/{{ fname }}"
+       data-caption="{{ caption|escapejs }}"
+       data-fname="{{ fname }}"
+       onclick="openLightbox('/media/{{ fname }}', '{% if 'video' in ftype %}video{% else %}image{% endif %}', '{{ caption|escapejs }}')">
+    {% if 'video' in ftype or fname|lower|slice:'-4:' == '.mp4' or fname|lower|slice:'-4:' == '.mov' or fname|lower|slice:'-5:' == '.webm' %}
+    <div class="arch-thumb-video">
+      <video class="arch-thumb" preload="metadata" muted playsinline src="/media/{{ fname }}#t=0.5"></video>
+      <span class="arch-play">▶</span>
+    </div>
+    {% else %}
+    <img class="arch-thumb" src="/media/{{ fname }}" alt="{{ caption }}" loading="lazy">
+    {% endif %}
+    <div class="arch-meta">
+      <div class="arch-name">{{ caption }}</div>
+      <div class="arch-type">{{ item.file_type }}</div>
+    </div>
+    <button class="arch-move-btn" title="Перенести в Архив 2" onclick="event.stopPropagation();moveFile('{{ fname }}','archive2')">→ A2</button>
+    <button class="arch-move-btn arch-move-btn2" title="Перенести в Публичный архив" onclick="event.stopPropagation();moveFile('{{ fname }}','archive3')">→ 🌐</button>
+    <button class="arch-del-btn" title="Удалить" onclick="event.stopPropagation();delFile('{{ fname }}')">🗑</button>
+  </div>
+  {% endwith %}
+  {% endwith %}
+  {% empty %}
+  <div style="grid-column:1/-1;text-align:center;padding:60px;color:#888">
+    <div style="font-size:48px;margin-bottom:12px">📭</div>
+    <p>Архив пока пуст — выполни первое задание!</p>
+    <a href="/challenges" class="btn btn-primary" style="margin-top:12px">Задания →</a>
+  </div>
+  {% endfor %}
+</div>
+
+{% if total_pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="?page={{ page|add:"-1" }}" class="page-btn">← Назад</a>
+  {% endif %}
+  <span class="page-current">{{ page }} / {{ total_pages }}</span>
+  {% if page < total_pages %}
+  <a href="?page={{ page|add:"1" }}" class="page-btn">Вперёд →</a>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="if(event.target===this||event.target.classList.contains('lightbox-close'))closeLightbox()">
+  <div class="lightbox-close" onclick="closeLightbox()">✕</div>
+  <img id="lb-img" src="" alt="" style="display:none">
+  <video id="lb-video" src="" controls style="display:none"></video>
+  <div class="lightbox-caption" id="lb-caption"></div>
+</div>
+
+<!-- Slideshow overlay -->
+<div class="ss-bg" id="ss-overlay">
+  <div class="ss-close" onclick="ssClose()">✕</div>
+  <div class="ss-nav ss-prev" id="ss-prev" onclick="ssGo(-1)">&#8249;</div>
+  <div class="ss-nav ss-next" id="ss-next" onclick="ssGo(1)">&#8250;</div>
+  <div class="ss-counter" id="ss-counter">Загрузка…</div>
+  <div class="ss-media-wrap" id="ss-wrap"></div>
+  <div class="ss-actions open" id="ss-actions">
+    <button class="ss-act-btn" onclick="ssShuffle()">🔀 Перемешать</button>
+    <button class="ss-act-btn" id="ss-move-btn" onclick="ssMoveToArchive2()">→ Архив 2</button>
+  </div>
+  <div class="ss-bar"><div class="ss-bar-fill" id="ss-bar-fill"></div></div>
+</div>
+
+<!-- Delete modal -->
+<div class="del-modal" id="del-modal">
+  <div class="del-box">
+    <h3>🗑 Удалить файл?</h3>
+    <input type="password" id="del-pwd-input" placeholder="Пароль" autocomplete="off"
+           onkeydown="if(event.key==='Enter')delConfirm()">
+    <div class="del-error" id="del-error"></div>
+    <div class="del-btns">
+      <button class="del-btn-ok" onclick="delConfirm()">Удалить</button>
+      <button class="del-btn-cancel" onclick="delCancel()">Отмена</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const SS_FOLDER = 'archive';
+
+let currentTypeFilter = '';
+function setType(el, type) {
+  currentTypeFilter = type;
+  document.querySelectorAll('.arch-filter').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.arch-item').forEach(item => {
+    item.style.display = (!type || item.dataset.type === type) ? '' : 'none';
+  });
+}
+function openLightbox(url, type, caption) {
+  const lb = document.getElementById('lightbox');
+  const img = document.getElementById('lb-img');
+  const vid = document.getElementById('lb-video');
+  if (type === 'video') {
+    vid.src = url; vid.style.display = 'block';
+    img.style.display = 'none'; img.src = '';
+  } else {
+    img.src = url; img.style.display = 'block';
+    vid.style.display = 'none'; vid.src = '';
+  }
+  document.getElementById('lb-caption').textContent = caption;
+  lb.classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+  document.getElementById('lb-video').pause();
+}
+
+// === SLIDESHOW (all records via API) ===
+let ssAllItems = [], ssIdx = 0, ssTimer = null, ssBarRaf = null;
+
+async function ssStart() {
+  const overlay = document.getElementById('ss-overlay');
+  overlay.classList.add('open');
+  document.getElementById('ss-counter').textContent = 'Загрузка…';
+  document.getElementById('ss-prev').style.display = 'flex';
+  document.getElementById('ss-next').style.display = 'flex';
+  document.getElementById('ss-wrap').innerHTML = '';
+
+  try {
+    const resp = await fetch('/api/media_list?folder=' + SS_FOLDER);
+    const data = await resp.json();
+    ssAllItems = data.items || [];
+  } catch(e) {
+    ssAllItems = [];
+  }
+
+  if (!ssAllItems.length) {
+    overlay.classList.remove('open');
+    return;
+  }
+  ssIdx = 0;
+  ssShow(0);
+}
+
+function ssShow(idx) {
+  clearTimeout(ssTimer);
+  cancelAnimationFrame(ssBarRaf);
+
+  const item = ssAllItems[idx];
+  const wrap = document.getElementById('ss-wrap');
+  const fill = document.getElementById('ss-bar-fill');
+
+  document.getElementById('ss-counter').textContent = (idx + 1) + ' / ' + ssAllItems.length;
+  wrap.innerHTML = '';
+  fill.style.transition = 'none';
+  fill.style.width = '0%';
+
+  if (item.type === 'video') {
+    const v = document.createElement('video');
+    v.src = item.url;
+    v.autoplay = true;
+    v.controls = true;
+    v.playsInline = true;
+    v.style.maxWidth = '100vw';
+    v.style.maxHeight = '100vh';
+    v.onended = () => ssGo(1);
+    v.addEventListener('timeupdate', () => {
+      if (v.duration) fill.style.width = (v.currentTime / v.duration * 100) + '%';
+    });
+    wrap.appendChild(v);
+    v.play().catch(() => {});
+  } else {
+    const img = document.createElement('img');
+    img.src = item.url;
+    wrap.appendChild(img);
+    const dur = 3000;
+    const t0 = performance.now();
+    function animFill(now) {
+      const pct = Math.min((now - t0) / dur * 100, 100);
+      fill.style.width = pct + '%';
+      if (pct < 100) ssBarRaf = requestAnimationFrame(animFill);
+    }
+    ssBarRaf = requestAnimationFrame(animFill);
+    ssTimer = setTimeout(() => ssGo(1), dur);
+  }
+}
+
+function ssGo(dir) {
+  clearTimeout(ssTimer);
+  cancelAnimationFrame(ssBarRaf);
+  const v = document.querySelector('#ss-wrap video');
+  if (v) v.pause();
+  if (!ssAllItems.length) return;
+  ssIdx = (ssIdx + dir + ssAllItems.length) % ssAllItems.length;
+  ssShow(ssIdx);
+}
+
+function ssClose() {
+  clearTimeout(ssTimer);
+  cancelAnimationFrame(ssBarRaf);
+  const v = document.querySelector('#ss-wrap video');
+  if (v) v.pause();
+  document.getElementById('ss-overlay').classList.remove('open');
+}
+
+function ssShuffle() {
+  clearTimeout(ssTimer); cancelAnimationFrame(ssBarRaf);
+  const v = document.querySelector('#ss-wrap video');
+  if (v) v.pause();
+  for (let i = ssAllItems.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [ssAllItems[i], ssAllItems[j]] = [ssAllItems[j], ssAllItems[i]];
+  }
+  ssIdx = 0; ssShow(0);
+}
+
+async function ssMoveToArchive2() {
+  if (!ssAllItems.length) return;
+  const item = ssAllItems[ssIdx];
+  const btn = document.getElementById('ss-move-btn');
+  btn.textContent = '⏳'; btn.disabled = true;
+  try {
+    const r = await fetch('/move', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+      body: JSON.stringify({file_name: item.fname, target: 'archive2'}),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.querySelectorAll('.arch-item').forEach(el => {
+        if (el.dataset.fname === item.fname) el.remove();
+      });
+      ssAllItems.splice(ssIdx, 1);
+      if (!ssAllItems.length) { ssClose(); return; }
+      ssIdx = ssIdx % ssAllItems.length;
+      ssShow(ssIdx);
+    } else { alert(d.error || 'Ошибка'); }
+  } catch(e) { alert('Ошибка сети'); }
+  finally { btn.textContent = '→ Архив 2'; btn.disabled = false; }
+}
+
+// === MOVE ===
+function getCsrf() {
+  const m = document.cookie.match(/csrftoken=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
+async function moveFile(fname, target) {
+  try {
+    const r = await fetch('/move', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+      body: JSON.stringify({ file_name: fname, target }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.querySelectorAll('.arch-item').forEach(el => {
+        if (el.dataset.fname === fname) el.remove();
+      });
+    } else {
+      alert(d.error || 'Ошибка при переносе');
+    }
+  } catch (e) {
+    alert('Ошибка сети');
+  }
+}
+
+// === DELETE ===
+let delTarget = null;
+
+function delFile(fname) {
+  delTarget = fname;
+  document.getElementById('del-pwd-input').value = '';
+  document.getElementById('del-error').textContent = '';
+  document.getElementById('del-modal').classList.add('open');
+  setTimeout(() => document.getElementById('del-pwd-input').focus(), 50);
+}
+function delCancel() {
+  delTarget = null;
+  document.getElementById('del-modal').classList.remove('open');
+}
+async function delConfirm() {
+  const pwd = document.getElementById('del-pwd-input').value;
+  const errEl = document.getElementById('del-error');
+  errEl.textContent = '';
+  try {
+    const r = await fetch('/delete', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrf() },
+      body: JSON.stringify({ password: pwd, file_name: delTarget }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      document.querySelectorAll('.arch-item').forEach(el => {
+        if (el.dataset.fname === delTarget) el.remove();
+      });
+      document.getElementById('del-modal').classList.remove('open');
+      delTarget = null;
+    } else {
+      errEl.textContent = d.error || 'Неверный пароль';
+    }
+  } catch (e) {
+    errEl.textContent = 'Ошибка сети';
+  }
+}
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('ss-overlay').classList.contains('open')) {
+    if (e.key === 'ArrowLeft') ssGo(-1);
+    else if (e.key === 'ArrowRight') ssGo(1);
+    else if (e.key === 'Escape') ssClose();
+    return;
+  }
+  if (e.key === 'Escape') { closeLightbox(); delCancel(); }
+});
+</script>
+{% include "core/_media_social.html" %}
+{% endblock %}

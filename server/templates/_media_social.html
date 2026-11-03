@@ -1,0 +1,161 @@
+{# Лайки + комментарии + сортировка для слайдшоу. Подключается в archive.html/archive2.html. #}
+<style>
+  #soc-sort { background:#111; color:#fff; border:1px solid rgba(255,255,255,.3); border-radius:16px;
+    font:700 12px sans-serif; padding:6px 10px; }
+  .soc-btn { background:rgba(0,0,0,.6); color:#fff; border:1px solid rgba(255,255,255,.25);
+    border-radius:16px; font:700 13px sans-serif; padding:6px 12px; cursor:pointer; }
+  .soc-btn.on { background:#FFE500; color:#000; border-color:#000; }
+  #soc-drawer { position:fixed; left:0; right:0; bottom:0; max-height:55vh; background:#111;
+    border-top:2px solid #FFE500; z-index:9600; transform:translateY(100%); transition:transform .25s;
+    display:flex; flex-direction:column; }
+  #soc-drawer.open { transform:translateY(0); }
+  #soc-list { overflow-y:auto; padding:10px 14px; color:#eee; font:14px/1.4 sans-serif; }
+  .soc-c { padding:7px 0; border-bottom:1px solid rgba(255,255,255,.08); }
+  .soc-c b { color:#FFE500; font-size:12px; }
+  .soc-c.mine b::after { content:" · вы"; color:#888; font-weight:400; }
+  .soc-c .t { display:block; margin-top:2px; }
+  #soc-form { display:flex; gap:6px; padding:10px 14px; border-top:1px solid rgba(255,255,255,.15); background:#181818; }
+  #soc-text { flex:1; background:#222; color:#fff; border:1px solid #444; border-radius:10px; padding:8px 10px; font:14px sans-serif; }
+  #soc-send { background:#FFE500; color:#000; border:0; border-radius:10px; font:700 14px sans-serif; padding:0 16px; cursor:pointer; }
+  #soc-drawer-head { display:flex; justify-content:space-between; align-items:center; padding:8px 14px; color:#fff; font:700 14px sans-serif; border-bottom:1px solid rgba(255,255,255,.12); }
+  #soc-drawer-head span { cursor:pointer; opacity:.7; font-size:18px; }
+</style>
+<script>
+(function(){
+  function uid(){
+    try { return localStorage.getItem('hn_uid') || ''; } catch(e){ return ''; }
+  }
+  function api(url, opts){
+    opts = opts || {};
+    opts.headers = Object.assign({'X-UID': uid(), 'Content-Type':'application/json'}, opts.headers||{});
+    return fetch(url, opts).then(r=>r.json());
+  }
+  let socStats = {};            // fname -> {likes,comments,liked}
+  let socSort = 'order';
+  let socFolder = (typeof SS_FOLDER!=='undefined') ? SS_FOLDER : 'archive';
+
+  function curFname(){
+    try { return (ssAllItems[ssIdx]||{}).fname || ''; } catch(e){ return ''; }
+  }
+
+  function applySort(){
+    if (socSort === 'order') return;
+    const key = socSort === 'likes' ? 'likes' : 'comments';
+    ssAllItems.sort((a,b)=>((socStats[b.fname]||{})[key]||0)-((socStats[a.fname]||{})[key]||0));
+  }
+
+  function updateBar(){
+    const fn = curFname();
+    const s = socStats[fn] || {likes:0,comments:0,liked:false};
+    const like = document.getElementById('soc-like');
+    const cmt  = document.getElementById('soc-cmt');
+    if (like){ like.textContent = (s.liked?'❤':'🤍')+' '+s.likes; like.classList.toggle('on', !!s.liked); }
+    if (cmt) cmt.textContent = '💬 '+s.comments;
+    const dr = document.getElementById('soc-drawer');
+    if (dr && dr.classList.contains('open')) loadComments();
+  }
+
+  function toggleLike(){
+    const fn = curFname(); if(!fn) return;
+    api('/api/media/like', {method:'POST', body:JSON.stringify({file_name:fn})}).then(d=>{
+      if(!d.ok) return;
+      socStats[fn] = socStats[fn] || {likes:0,comments:0,liked:false};
+      socStats[fn].likes = d.likes; socStats[fn].liked = d.liked;
+      updateBar();
+    }).catch(()=>{});
+  }
+
+  function loadComments(){
+    const fn = curFname(); if(!fn) return;
+    const list = document.getElementById('soc-list');
+    api('/api/media/comments?sort=new&file_name='+encodeURIComponent(fn)).then(d=>{
+      if(!d.ok) return;
+      list.innerHTML = d.items.length ? '' : '<div style="opacity:.6;padding:8px 0">Пока нет комментариев. Будь первым.</div>';
+      d.items.forEach(c=>{
+        const div = document.createElement('div');
+        div.className = 'soc-c'+(c.mine?' mine':'');
+        div.innerHTML = '<b></b><span class="t"></span>';
+        div.querySelector('b').textContent = c.name;
+        div.querySelector('.t').textContent = c.text;
+        list.appendChild(div);
+      });
+    }).catch(()=>{});
+  }
+
+  function sendComment(){
+    const fn = curFname(); if(!fn) return;
+    const ta = document.getElementById('soc-text');
+    const text = (ta.value||'').trim(); if(!text) return;
+    let name = '';
+    try { name = localStorage.getItem('hn_display_name') || ''; } catch(e){}
+    api('/api/media/comment', {method:'POST', body:JSON.stringify({file_name:fn, text:text, name:name})}).then(d=>{
+      if(!d.ok) return;
+      ta.value='';
+      socStats[fn] = socStats[fn] || {likes:0,comments:0,liked:false};
+      socStats[fn].comments = (socStats[fn].comments||0)+1;
+      updateBar(); loadComments();
+    }).catch(()=>{});
+  }
+
+  function toggleDrawer(){
+    const dr = document.getElementById('soc-drawer');
+    dr.classList.toggle('open');
+    if (dr.classList.contains('open')) loadComments();
+  }
+
+  function buildUI(){
+    const actions = document.getElementById('ss-actions');
+    if (actions && !document.getElementById('soc-like')){
+      const like = document.createElement('button');
+      like.id='soc-like'; like.className='soc-btn'; like.textContent='🤍 0';
+      like.onclick = toggleLike;
+      const cmt = document.createElement('button');
+      cmt.id='soc-cmt'; cmt.className='soc-btn'; cmt.textContent='💬 0';
+      cmt.onclick = toggleDrawer;
+      const sort = document.createElement('select');
+      sort.id='soc-sort';
+      sort.innerHTML = '<option value="order">По порядку</option>'
+        +'<option value="likes">Популярные ❤</option>'
+        +'<option value="comments">Обсуждаемые 💬</option>';
+      sort.onchange = function(){ socSort=this.value; applySort(); ssIdx=0; ssShow(0); updateBar(); };
+      actions.insertBefore(like, actions.firstChild);
+      actions.insertBefore(cmt, actions.firstChild);
+      actions.appendChild(sort);
+    }
+    if (!document.getElementById('soc-drawer')){
+      const dr = document.createElement('div');
+      dr.id='soc-drawer';
+      dr.innerHTML = '<div id="soc-drawer-head">Комментарии <span onclick="document.getElementById(\'soc-drawer\').classList.remove(\'open\')">✕</span></div>'
+        +'<div id="soc-list"></div>'
+        +'<div id="soc-form"><input id="soc-text" placeholder="Написать комментарий…" '
+        +'onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.nextElementSibling.click();}">'
+        +'<button id="soc-send">Отпр.</button></div>';
+      document.body.appendChild(dr);
+      dr.querySelector('#soc-send').onclick = sendComment;
+    }
+  }
+
+  function fetchStats(){
+    return api('/api/media/stats?folder='+encodeURIComponent(socFolder)).then(d=>{
+      socStats = (d && d.ok) ? d.stats : {};
+    }).catch(()=>{ socStats={}; });
+  }
+
+  function hook(){
+    if (typeof window.ssShow!=='function' || typeof window.ssStart!=='function'){
+      return setTimeout(hook, 60);
+    }
+    buildUI();
+    const origShow = window.ssShow;
+    window.ssShow = function(i){ origShow.apply(this, arguments); updateBar(); };
+    const origStart = window.ssStart;
+    window.ssStart = function(){
+      const r = origStart.apply(this, arguments);
+      Promise.resolve(r).then(()=> fetchStats().then(()=>{ applySort(); if(ssAllItems&&ssAllItems.length){ ssIdx=0; ssShow(0);} updateBar(); }));
+      return r;
+    };
+  }
+  if (document.readyState==='loading') document.addEventListener('DOMContentLoaded', hook);
+  else hook();
+})();
+</script>
