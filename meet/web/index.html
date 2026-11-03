@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Production IT · встречи</title>
+<script>(function(){var t=localStorage.getItem('pit.theme')||'dark';document.documentElement.dataset.theme=t;})();</script>
+<style>
+@font-face{font-family:Gilroy;src:url(fonts/Gilroy-Regular.woff2) format('woff2');font-weight:400}
+@font-face{font-family:Gilroy;src:url(fonts/Gilroy-Medium.woff2) format('woff2');font-weight:500 700}
+@font-face{font-family:'Tactic Sans Extended';src:url(fonts/TacticSansExtended-Bold.woff2) format('woff2');font-weight:700}
+:root{--ink:#1e1d30;--text:#435971;--sub:#697a8d;--muted:#a1acb8;--acc:#5e27d4;--line:#d9dee3;--soft:#efeaff;--card:#fff;--field:#f5f5f9;--grid:#eef0f4;--past1:#fafbfd;--past2:#f5f6f9;--page:#f5f5f9;--shade:rgba(30,29,48,.05);--dim:rgba(30,29,48,.45)}
+/* тёмная тема — по умолчанию (кнопка ☀/☾ в шапке, выбор запоминается) */
+html[data-theme=dark]{color-scheme:dark;--ink:#f1f0f7;--text:#c7c5d9;--sub:#9c99b5;--muted:#77749a;--line:#2f2c4a;--soft:#2a2350;--card:#1a1928;--field:#12111c;--grid:#24223a;--past1:#161524;--past2:#1b1a2b;--page:#12111c;--shade:rgba(0,0,0,.25);--dim:rgba(0,0,0,.6)}
+html[data-theme=dark] body{background:radial-gradient(700px 480px at 100% 0%,rgba(94,39,212,.28),transparent 70%),radial-gradient(600px 420px at 0% 100%,rgba(236,120,160,.10),transparent 70%),#12111c}
+.theme{width:38px;height:38px;border-radius:40px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:17px;cursor:pointer}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;font:400 16px/1.5 Gilroy,system-ui,sans-serif;color:var(--text);
+background:radial-gradient(700px 480px at 100% 0%,rgba(94,39,212,.16),transparent 70%),radial-gradient(600px 420px at 0% 100%,rgba(236,120,160,.14),transparent 70%),#f5f5f9}
+[hidden]{display:none!important}
+header{display:flex;align-items:center;gap:12px;max-width:1180px;margin:auto;padding:22px 20px 8px}
+.logo{font:700 22px/1 'Tactic Sans Extended',Gilroy,sans-serif;color:var(--ink);text-decoration:none;flex:1}
+.lang{display:flex;gap:2px;border:1.5px solid var(--line);border-radius:40px;padding:3px;background:var(--card)}
+.lang button{border:0;background:none;padding:6px 12px;border-radius:40px;font:500 13px Gilroy;color:var(--sub);cursor:pointer}
+.lang button.on{background:var(--acc);color:#fff}
+main{max-width:1180px;margin:auto;padding:8px 20px 40px}
+h1{font:500 34px/1.15 Gilroy;color:var(--ink);margin:10px 0 4px}
+.lead{color:var(--sub);margin:0 0 18px}
+.card{background:var(--card);border:1.5px solid var(--line);border-radius:24px;box-shadow:0 6px 20px var(--shade)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 22px;border-radius:40px;border:1.5px solid var(--acc);
+background:var(--acc);color:#fff;font:500 15px Gilroy;cursor:pointer;text-decoration:none;white-space:nowrap}
+.btn.outline{background:var(--card);color:var(--acc)}.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}.btn:disabled{opacity:.55;cursor:default}
+.icon{width:44px;padding:0;font-size:20px}
+.bar{display:flex;align-items:center;gap:8px;padding:16px 18px;border-bottom:1.5px solid var(--line);flex-wrap:wrap}
+.bar .range{font:500 18px Gilroy;color:var(--ink);margin:0 8px;flex:1;min-width:140px}
+.grid{display:grid;grid-template-columns:56px repeat(7,1fr);position:relative}
+.dhead{position:sticky;top:0;background:var(--card);z-index:2;padding:10px 4px;text-align:center;border-bottom:1.5px solid var(--line);font-size:13px;color:var(--sub)}
+.dhead b{display:block;font:500 20px Gilroy;color:var(--ink)}
+.dhead.today b{color:#fff;background:var(--acc);border-radius:40px;width:36px;height:36px;line-height:36px;margin:2px auto 0}
+.hour{height:44px;font-size:12px;color:var(--muted);text-align:right;padding:0 8px;transform:translateY(-8px)}
+.slot{height:22px;border-left:1px solid var(--grid);cursor:pointer;position:relative}
+.slot.top{border-top:1px solid var(--grid)}
+.slot:hover{background:var(--soft)}
+.slot:hover::after{content:'+';position:absolute;left:8px;top:-2px;color:var(--acc);font-weight:500}
+.slot.past{background:repeating-linear-gradient(135deg,var(--past1) 0 6px,var(--past2) 6px 12px);cursor:default}
+.slot.past:hover::after{content:none}
+.ev{position:absolute;left:3px;right:3px;background:var(--acc);color:#fff;border-radius:12px;padding:4px 8px;font-size:12px;line-height:1.25;overflow:hidden;cursor:pointer;z-index:1}
+.ev b{display:block;font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scroller{max-height:66vh;overflow:auto}
+.daytabs{display:none}
+@media(max-width:760px){
+ h1{font-size:26px}.grid{grid-template-columns:48px 1fr}.grid .d-col:not(.on),.dhead:not(.on):not(:first-child){display:none}
+ .daytabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px;border-bottom:1.5px solid var(--line)}
+ .daytabs button{flex:none;border:1.5px solid var(--line);background:var(--card);border-radius:16px;padding:6px 10px;font:500 13px Gilroy;color:var(--sub);min-width:52px}
+ .daytabs button b{display:block;font-size:17px;color:var(--ink)}.daytabs button.on{background:var(--acc);border-color:var(--acc);color:#fff}.daytabs button.on b{color:#fff}
+ .bar .range{font-size:16px}.scroller{max-height:none}
+}
+.dim{position:fixed;inset:0;background:var(--dim);display:none;align-items:flex-end;justify-content:center;z-index:10}
+.dim.show{display:flex}
+.modal{background:var(--card);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:24px}
+@media(min-width:620px){.dim{align-items:center}.modal{border-radius:24px}}
+.modal h2{font:500 24px Gilroy;color:var(--ink);margin:0 0 4px}
+label{display:block;font-weight:500;color:var(--ink);margin:14px 0 6px}
+input,select,textarea{width:100%;font:400 16px Gilroy;color:var(--ink);background:var(--field);border:1.5px solid var(--line);border-radius:14px;padding:11px 14px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-offset:1px;border-color:transparent}
+.r3{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:10px}.r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:480px){.r3,.r2{grid-template-columns:1fr}}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1.5px solid var(--line);border-radius:14px;background:var(--field)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--card);border:1.5px solid var(--line);border-radius:40px;padding:4px 6px 4px 12px;font-size:14px;color:var(--ink)}
+.chip button{border:0;background:var(--soft);color:var(--acc);border-radius:50%;width:26px;height:26px;cursor:pointer;font-size:13px;line-height:1}
+.chips input{flex:1;min-width:160px;border:0;background:transparent;padding:6px}
+.chips input:focus{outline:none}
+.hint{color:var(--muted);font-size:13px;margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+.err{color:#ff3e1d;margin-top:12px;min-height:1.4em}
+.link{font:500 14px monospace;background:var(--field);border:1.5px solid var(--line);border-radius:14px;padding:12px;word-break:break-all;color:var(--ink);margin-top:10px}
+.ad{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-top:18px;text-decoration:none;color:var(--text)}
+.ad .play{width:48px;height:48px;border-radius:14px;background:#0d1013;color:#f7b83d;display:grid;place-items:center;font-size:22px;flex:none}
+.ad p{margin:0;flex:1}.ad b{color:var(--ink);font-weight:500}
+@media(max-width:480px){.ad{flex-wrap:wrap}.ad .btn{width:100%}}
+.gate{max-width:440px;margin:30px auto;padding:28px}
+</style></head><body>
+<header><a class="logo" href="https://prod-it.com" target="_blank" rel="noopener">Production IT</a>
+<button class="theme" id="themeBtn" title="Тема" aria-label="Тема"></button>
+<div class="lang"><button data-l="ru">RU</button><button data-l="en">EN</button><button data-l="sr">SR</button></div></header>
+<main>
+<h1 data-t="h1"></h1><p class="lead" data-t="lead"></p>
+
+<form class="card gate" id="gate" hidden>
+  <label for="key" data-t="key"></label><input id="key" type="password" required autocomplete="current-password">
+  <div class="actions"><button class="btn" data-t="enter"></button></div><div class="err" id="gerr"></div>
+</form>
+
+<section class="card" id="cal" hidden>
+  <div class="bar">
+    <button class="btn ghost icon" id="prev" aria-label="prev">‹</button>
+    <button class="btn ghost" id="today" data-t="today"></button>
+    <button class="btn ghost icon" id="next" aria-label="next">›</button>
+    <div class="range" id="range"></div>
+    <button class="btn" id="new" data-t="new"></button>
+  </div>
+  <div class="daytabs" id="daytabs"></div>
+  <div class="scroller" id="scroller"><div class="grid" id="grid"></div></div>
+</section>
+
+<a class="card ad" href="https://play.google.com/store/apps/details?id=online.magicbtn.player" target="_blank" rel="noopener">
+  <div class="play">▶</div><p><b>Smart AI Player</b> — <span data-t="ad"></span></p><span class="btn outline">Google Play</span></a>
+</main>
+
+<div class="dim" id="dim"><div class="modal" role="dialog" aria-modal="true">
+  <form id="f">
+    <h2 data-t="newTitle"></h2>
+    <label for="title" data-t="title"></label><input id="title" required maxlength="120">
+    <div class="r3">
+      <div><label for="date" data-t="date"></label><input id="date" type="date" required></div>
+      <div><label for="time" data-t="time"></label><input id="time" type="time" required step="300"></div>
+      <div><label for="dur" data-t="dur"></label><select id="dur"><option>15</option><option selected>30</option><option>45</option><option>60</option><option>90</option><option>120</option></select></div>
+    </div>
+    <div class="r2">
+      <div><label for="org" data-t="org"></label><input id="org" maxlength="80" autocomplete="name"></div>
+      <div><label for="orgmail" data-t="orgmail"></label><input id="orgmail" type="email" autocomplete="email"></div>
+    </div>
+    <label data-t="guests"></label>
+    <div class="chips" id="chips"><input id="addmail" type="email" inputmode="email"></div>
+    <div class="hint" data-t="guestsHint"></div>
+    <label for="note" data-t="note"></label><textarea id="note" maxlength="1000" rows="2"></textarea>
+    <div class="hint" id="tzhint"></div>
+    <div id="keyrow" hidden><label for="fkey" data-t="key"></label><input id="fkey" type="password" autocomplete="current-password">
+      <div class="hint" data-t="needKeyHint"></div></div>
+    <div class="actions"><button class="btn" id="go" data-t="go"></button><button type="button" class="btn ghost" id="cancel" data-t="cancel"></button>
+      <button type="button" class="btn ghost" id="drop" data-t="dropMeeting" hidden style="margin-left:auto;color:#ff3e1d;border-color:#ffd2c9"></button></div>
+    <div class="err" id="err" role="alert"></div>
+  </form>
+  <div id="done" hidden><h2 data-t="ok"></h2><p data-t="okLead"></p><div class="link" id="link"></div>
+    <div class="actions"><a class="btn" id="open" target="_blank" rel="noopener" data-t="open"></a><button class="btn outline" id="copy" data-t="copy"></button><button class="btn ghost" id="close" data-t="close"></button></div></div>
+  <div id="view" hidden><h2 id="vtitle"></h2><p id="vwhen"></p><div class="link" id="vlink"></div>
+    <div class="actions"><a class="btn" id="vopen" target="_blank" rel="noopener" data-t="open"></a><button class="btn outline" id="vcopy" data-t="copy"></button><button class="btn ghost" id="vclose" data-t="close"></button></div></div>
+</div></div>
+
+<script>
+const DEFAULT_GUESTS=['venger.yura@gmail.com','hexneo36@gmail.com','panchuk35@gmail.com','dariabrakar1@gmail.com'];
+const T={
+ru:{h1:'Встречи Production IT',lead:'Нажмите на свободное время — встреча создастся, гости получат письмо со ссылкой и приглашением в календарь. Любую встречу можно изменить или отменить — нажмите на неё.',
+editTitle:'Изменить встречу',save:'Сохранить и разослать',dropMeeting:'Отменить встречу',confirmDrop:'Отменить встречу? Гости получат отмену.',
+needKey:'Сегодня вы уже создали или изменили 5 встреч — дальше нужен код доступа.',needKeyHint:'Без кода — до 5 встреч в сутки.',notYours:'Эту встречу может изменить только тот, кто её создал',
+key:'Код доступа',enter:'Войти',today:'Сегодня',new:'+ Встреча',newTitle:'Новая встреча',title:'Тема',date:'Дата',time:'Время',dur:'Минут',org:'Организатор',orgmail:'Почта организатора',
+guests:'Гости',guestsHint:'Удалить — ✕. Добавить — впишите адрес и нажмите Enter или запятую.',note:'Повестка',go:'Создать и разослать',cancel:'Отмена',
+ok:'Встреча создана',okLead:'Приглашения отправлены. Ссылка:',open:'Открыть встречу',copy:'Скопировать',copied:'Скопировано',close:'Закрыть',
+tz:'Часовой пояс: ',busy:'Отправляю…',errKey:'Неверный код доступа',errNet:'Нет связи с сервером',errLimit:'Лимит встреч на сегодня',errGuests:'Добавьте хотя бы одного гостя',backup:'Запасная ссылка (Zoom и т. п.), необязательно',failed:'Не доставлено: ',
+ad:'видеоплеер, чат и звонки на телефоне. Встречи — в один тап.',days:['Пн','Вт','Ср','Чт','Пт','Сб','Вс']},
+en:{h1:'Production IT meetings',lead:'Click a free time — the meeting is created and guests get an email with the link and a calendar invitation. Click any meeting to change or cancel it.',
+editTitle:'Edit meeting',save:'Save and send',dropMeeting:'Cancel meeting',confirmDrop:'Cancel the meeting? Guests will be notified.',
+needKey:'You have already created or changed 5 meetings today — an access code is needed now.',needKeyHint:'Without a code — up to 5 meetings a day.',notYours:'Only the person who created this meeting can change it',
+key:'Access code',enter:'Enter',today:'Today',new:'+ Meeting',newTitle:'New meeting',title:'Topic',date:'Date',time:'Time',dur:'Minutes',org:'Organizer',orgmail:'Organizer email',
+guests:'Guests',guestsHint:'Remove — ✕. Add — type an email and press Enter or comma.',note:'Agenda',go:'Create and send',cancel:'Cancel',
+ok:'Meeting created',okLead:'Invitations sent. Link:',open:'Open meeting',copy:'Copy',copied:'Copied',close:'Close',
+tz:'Time zone: ',busy:'Sending…',errKey:'Wrong access code',errNet:'Cannot reach the server',errLimit:'Daily limit reached',errGuests:'Add at least one guest',backup:'Backup link (Zoom etc.), optional',failed:'Not delivered: ',
+ad:'video player, chat and calls on your phone. Meetings in one tap.',days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun']},
+sr:{h1:'Састанци Production IT',lead:'Кликните на слободно време — састанак се прави, а гости добијају имејл са линком и позивницом за календар. Кликните на било који састанак да га измените или откажете.',
+editTitle:'Измени састанак',save:'Сачувај и пошаљи',dropMeeting:'Откажи састанак',confirmDrop:'Отказати састанак? Гости ће добити обавештење.',
+needKey:'Данас сте већ направили или изменили 5 састанака — сада је потребан код за приступ.',needKeyHint:'Без кода — до 5 састанака дневно.',notYours:'Овај састанак може да измени само онај ко га је направио',
+key:'Код за приступ',enter:'Уђи',today:'Данас',new:'+ Састанак',newTitle:'Нови састанак',title:'Тема',date:'Датум',time:'Време',dur:'Минута',org:'Организатор',orgmail:'Имејл организатора',
+guests:'Гости',guestsHint:'Уклони — ✕. Додај — упишите адресу и притисните Enter или зарез.',note:'Дневни ред',go:'Направи и пошаљи',cancel:'Откажи',
+ok:'Састанак је направљен',okLead:'Позивнице су послате. Линк:',open:'Отвори састанак',copy:'Копирај',copied:'Копирано',close:'Затвори',
+tz:'Временска зона: ',busy:'Шаљем…',errKey:'Погрешан код за приступ',errNet:'Нема везе са сервером',errLimit:'Дневни лимит је достигнут',errGuests:'Додајте бар једног госта',backup:'Резервни линк (Zoom итд.), опционо',failed:'Није испоручено: ',
+ad:'видео плејер, чет и позиви на телефону. Састанци једним додиром.',days:['Пон','Уто','Сре','Чет','Пет','Суб','Нед']}};
+const $=id=>document.getElementById(id);
+const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
+let CLIENT=localStorage.getItem('pit.client');   // этот браузер: свои встречи и лимит без кода
+if(!CLIENT){CLIENT=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('pit.client',CLIENT)}
+const H0=8,H1=22,PX=44;   // часы сетки и высота часа
+let L=localStorage.getItem('pit.lang')||(navigator.language||'ru').slice(0,2);if(!T[L])L='en';
+let KEY=localStorage.getItem('pit.key')||'',ALL=false,EDIT=null,items=[],week=monday(new Date()),day=(new Date().getDay()+6)%7,guests=[];
+function monday(d){d=new Date(d);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
+const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+function lang(l){L=l;localStorage.setItem('pit.lang',l);document.documentElement.lang=l;
+ document.querySelectorAll('[data-t]').forEach(e=>e.textContent=T[l][e.dataset.t]);
+ document.querySelectorAll('.lang button').forEach(b=>b.classList.toggle('on',b.dataset.l===l));
+ $('tzhint').textContent=T[l].tz+tz;$('addmail').placeholder='name@mail.com';document.title='Production IT · '+T[l].h1;if(!$('cal').hidden)draw()}
+document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>lang(b.dataset.l));
+
+async function load(){
+ $('cal').hidden=false;$('gate').hidden=true;
+ try{const r=await fetch('/meet/api/list',{headers:{'X-Meet-Key':KEY,'X-Client':CLIENT}});const j=await r.json();
+  items=j.items||[];ALL=!!j.all;draw();
+ }catch(e){draw()}}
+
+function draw(){
+ const g=$('grid'),now=new Date();g.innerHTML='';
+ const end=new Date(week);end.setDate(end.getDate()+6);
+ const fmt=new Intl.DateTimeFormat(L,{day:'numeric',month:'long'});
+ $('range').textContent=fmt.format(week)+' — '+fmt.format(end)+' '+end.getFullYear();
+ g.appendChild(Object.assign(document.createElement('div'),{className:'dhead'}));
+ const tabs=$('daytabs');tabs.innerHTML='';
+ for(let i=0;i<7;i++){const d=new Date(week);d.setDate(d.getDate()+i);
+  const h=document.createElement('div');h.className='dhead'+(iso(d)===iso(now)?' today':'')+(i===day?' on':'');
+  h.innerHTML=T[L].days[i]+'<b>'+d.getDate()+'</b>';g.appendChild(h);
+  const tb=document.createElement('button');tb.className=i===day?'on':'';tb.innerHTML=T[L].days[i]+'<b>'+d.getDate()+'</b>';tb.onclick=()=>{day=i;draw()};tabs.appendChild(tb)}
+ const hours=document.createElement('div');for(let h=H0;h<H1;h++){const x=document.createElement('div');x.className='hour';x.textContent=pad(h)+':00';hours.appendChild(x)}
+ g.appendChild(hours);
+ for(let i=0;i<7;i++){const d=new Date(week);d.setDate(d.getDate()+i);
+  const col=document.createElement('div');col.className='d-col'+(i===day?' on':'');col.style.position='relative';
+  for(let h=H0;h<H1;h++)for(const m of [0,30]){const s=document.createElement('div');const t=new Date(d);t.setHours(h,m,0,0);
+   s.className='slot'+(m===0?' top':'')+(t<now?' past':'');if(t>=now)s.onclick=()=>openNew(t);col.appendChild(s)}
+  for(const it of items){const st=new Date(it.start);if(iso(st)!==iso(d))continue;
+   const top=((st.getHours()+st.getMinutes()/60)-H0)*PX;if(top<0||top>(H1-H0)*PX)continue;
+   const e=document.createElement('div');e.className='ev';e.style.top=top+'px';e.style.height=Math.max(22,it.minutes/60*PX-2)+'px';
+   e.innerHTML='<b></b>'+pad(st.getHours())+':'+pad(st.getMinutes());e.firstChild.textContent=it.title;e.onclick=ev=>{ev.stopPropagation();view(it)};col.appendChild(e)}
+  g.appendChild(col)}
+ const sc=$('scroller');if(!sc.dataset.s){sc.scrollTop=Math.max(0,(Math.min(now.getHours(),18)-H0-1))*PX;sc.dataset.s=1}}
+$('prev').onclick=()=>{week.setDate(week.getDate()-7);draw()};$('next').onclick=()=>{week.setDate(week.getDate()+7);draw()};
+$('today').onclick=()=>{week=monday(new Date());day=(new Date().getDay()+6)%7;draw()};
+$('new').onclick=()=>{const t=new Date();t.setMinutes(t.getMinutes()<30?30:60,0,0);openNew(t)};
+
+function chips(){const c=$('chips'),inp=$('addmail');c.querySelectorAll('.chip').forEach(x=>x.remove());
+ guests.forEach((m,i)=>{const ch=document.createElement('span');ch.className='chip';ch.textContent=m;const x=document.createElement('button');x.type='button';x.textContent='✕';x.setAttribute('aria-label','remove '+m);
+  x.onclick=()=>{guests.splice(i,1);chips()};ch.appendChild(x);c.insertBefore(ch,inp)})}
+function addGuest(){const v=$('addmail').value.split(/[\s,;]+/).map(s=>s.trim()).filter(s=>/^[^@\s]+@[^@\s]+\.[a-z]{2,}$/i.test(s));
+ v.forEach(m=>{if(!guests.some(g=>g.toLowerCase()===m.toLowerCase()))guests.push(m)});$('addmail').value='';chips()}
+$('addmail').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','||e.key===';'){e.preventDefault();addGuest()}});
+$('addmail').addEventListener('blur',addGuest);
+
+function show(which){['f','done','view'].forEach(id=>$(id).hidden=id!==which);$('dim').classList.add('show')}
+function hide(){$('dim').classList.remove('show')}
+function openNew(t){EDIT=null;$('drop').hidden=true;$('go').textContent=T[L].go;document.querySelector('#f h2').textContent=T[L].newTitle;
+ $('keyrow').hidden=true;$('title').value='';$('note').value='';$('err').textContent='';$('date').value=iso(t);$('time').value=pad(t.getHours())+':'+pad(t.getMinutes());
+ $('org').value=localStorage.getItem('pit.org')||'';$('orgmail').value=localStorage.getItem('pit.orgmail')||'';guests=DEFAULT_GUESTS.slice();chips();show('f');setTimeout(()=>$('title').focus(),50)}
+function openEdit(it){const st=new Date(it.start);EDIT=it.uid;$('drop').hidden=false;$('go').textContent=T[L].save;
+ document.querySelector('#f h2').textContent=T[L].editTitle;$('keyrow').hidden=true;$('err').textContent='';
+ $('title').value=it.title;$('note').value=it.note||'';$('date').value=iso(st);$('time').value=pad(st.getHours())+':'+pad(st.getMinutes());
+ const ds=$('dur');if(![...ds.options].some(o=>+o.value===it.minutes))ds.add(new Option(it.minutes,it.minutes));ds.value=it.minutes;
+ $('org').value=it.organizer||'';$('orgmail').value=it.organizer_email||'';
+ guests=(it.emails||[]).filter(e=>!it.organizer_email||e.toLowerCase()!==it.organizer_email.toLowerCase());chips();show('f')}
+function view(it){if(it.mine||ALL)return openEdit(it);const st=new Date(it.start);$('vtitle').textContent=it.title;
+ $('vwhen').textContent=new Intl.DateTimeFormat(L,{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(st)+' · '+it.minutes+' '+T[L].dur.toLowerCase();
+ $('vlink').textContent=it.link;$('vopen').href=it.link;$('vcopy').textContent=T[L].copy;show('view')}
+$('cancel').onclick=hide;
+$('drop').onclick=async()=>{if(!EDIT||!confirm(T[L].confirmDrop))return;
+ const r=await fetch('/meet/api/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:EDIT,cancel:true,key:KEY,client:CLIENT})});
+ const j=await r.json();if(j.ok){hide();load()}else if(r.status===401){$('keyrow').hidden=false;$('err').textContent=T[L].needKey}else $('err').textContent=j.error||'error'};$('close').onclick=hide;$('vclose').onclick=hide;$('dim').onclick=e=>{if(e.target.id==='dim')hide()};
+document.addEventListener('keydown',e=>{if(e.key==='Escape')hide()});
+$('copy').onclick=()=>{navigator.clipboard.writeText($('link').textContent);$('copy').textContent=T[L].copied};
+$('vcopy').onclick=()=>{navigator.clipboard.writeText($('vlink').textContent);$('vcopy').textContent=T[L].copied};
+$('f').onsubmit=async e=>{e.preventDefault();addGuest();$('err').textContent='';
+ if(!guests.length){$('err').textContent=T[L].errGuests;return}
+ const go=$('go');go.disabled=true;go.textContent=T[L].busy;
+ if(!$('keyrow').hidden&&$('fkey').value.trim()){KEY=$('fkey').value.trim();localStorage.setItem('pit.key',KEY)}
+ const body={key:KEY,client:CLIENT,uid:EDIT||undefined,title:$('title').value.trim(),start:new Date($('date').value+'T'+$('time').value).toISOString(),tz,duration:+$('dur').value,
+  organizer:$('org').value.trim(),organizer_email:$('orgmail').value.trim(),emails:guests,note:$('note').value.trim(),lang:L};
+ try{const r=await fetch(EDIT?'/meet/api/edit':'/meet/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();
+  if(!j.ok){if(r.status===401){$('keyrow').hidden=false;$('err').textContent=KEY?T[L].errKey:T[L].needKey;$('fkey').focus()}
+   else $('err').textContent=r.status===403?T[L].notYours:r.status===429?T[L].errLimit:(j.error||'error');return}
+  localStorage.setItem('pit.org',body.organizer);localStorage.setItem('pit.orgmail',body.organizer_email);
+  $('link').textContent=j.link;$('open').href=j.link;$('copy').textContent=T[L].copy;
+  const bad=Object.keys(j.failed||{});$('done').querySelector('p').textContent=T[L].okLead+(bad.length?' '+T[L].failed+bad.join(', '):'');
+  show('done');load();
+ }catch(x){$('err').textContent=T[L].errNet}finally{go.disabled=false;go.textContent=T[L].go}};
+lang(L);
+load();
+</script><script>
+(function(){var b=document.getElementById('themeBtn');
+function set(t){document.documentElement.dataset.theme=t;localStorage.setItem('pit.theme',t);b.textContent=t==='dark'?'☀':'☾';}
+set(document.documentElement.dataset.theme||'dark');b.onclick=function(){set(document.documentElement.dataset.theme==='dark'?'light':'dark');};})();
+</script>
+</body></html>
