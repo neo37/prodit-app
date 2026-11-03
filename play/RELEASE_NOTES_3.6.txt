@@ -1,0 +1,24 @@
+<ru-RU>
+• Новый главный экран: Чат, Видеоплеер и Игра
+• Игра открывается сразу на вашем уровне
+• Звонки: кнопка «В звонок» — сразу в комнату, без лишних шагов
+• Чат: исправлены двойные сообщения
+• Видео из «Моих просмотров» без подписи
+• Тема «Консоль» и обновлённые значки
+</ru-RU>
+<en-US>
+• New home screen: Chat, Video player and Game
+• The game opens right at your level
+• Calls: the “Join call” button takes you straight into the room
+• Chat: fixed duplicate messages
+• Videos from “My views” without a watermark
+• “Console” theme and refreshed icons
+</en-US>
+<sr>
+• Нови почетни екран: Чет, Видео плејер и Игра
+• Игра се отвара одмах на вашем нивоу
+• Позиви: дугме „У позив” води право у собу
+• Чет: исправљене дуплиране поруке
+• Видео снимци из „Мојих гледања” без потписа
+• Тема „Конзола” и освежене иконе
+</sr>

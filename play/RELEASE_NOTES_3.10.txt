@@ -1,0 +1,18 @@
+<ru-RU>
+• Редактор видео: обрезка прямо при просмотре и записи слайдшоу — зелёная рамка «оставить», красная «вырезать», шаг ±1 с
+• Подробная помощь по всем экранам — Алиса расскажет про каждый раздел
+• Отправка видео и сборка роликов продолжаются в свёрнутом приложении
+• Запись просмотра в слайдшоу «Офлайн», значки во всех темах
+</ru-RU>
+<en-US>
+• Video editor: trim while watching or recording a slideshow — green frame keeps, red cuts, ±1 s steps
+• Detailed help for every screen — Alisa explains each section
+• Video sending and video making continue when the app is minimised
+• Viewing recording in the Offline slideshow, icons in every theme
+</en-US>
+<sr>
+• Uređivač videa: isecanje dok gledate ili snimate slajdšou — zeleni okvir ostaje, crveni iseca, korak ±1 s
+• Detaljna pomoć za sve ekrane — Alisa objašnjava svaki odeljak
+• Slanje videa i pravljenje snimaka nastavljaju se i kada umanjite aplikaciju
+• Snimanje gledanja u slajdšou „Oflajn”, ikonice u svim temama
+</sr>

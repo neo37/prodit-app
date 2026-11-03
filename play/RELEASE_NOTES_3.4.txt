@@ -1,0 +1,20 @@
+<ru-RU>
+• Игра «Хвосты» (башенная защита) прямо в приложении, без интернета
+• Новая тема «Консоль»: спокойный графит и янтарь, шрифт Onest
+• ⏺ Запись слайдшоу и «Мои просмотры» — собрать просмотр в одно видео (👎 — не включать)
+• Свой сайт как источник: готовые файлы PHP и Python
+• Папки источника можно выключать
+• Удаление видео с телефона и прямо во время слайдшоу
+• Новые сообщения подсвечиваются, видео с телефона можно отправить в чат или в личку
+• Длинные видео по сети больше не тормозят
+</ru-RU>
+<en-US>
+• Game “Tails” (tower defence) right in the app, works offline
+• New “Console” theme: calm graphite and amber, Onest font
+• ⏺ Record a slideshow and turn “My views” into one video (👎 to leave a file out)
+• Your website as a source: ready-made PHP and Python files
+• Turn folders of a source on and off
+• Delete phone videos, even during a slideshow
+• New messages are highlighted; send phone videos to the group or a private chat
+• Long online videos no longer stutter
+</en-US>

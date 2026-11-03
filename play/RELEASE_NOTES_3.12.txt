@@ -1,0 +1,15 @@
+<ru-RU>
+• Подробное обучение с Алисой по всем разделам — начиная с чата; «Назад», «Далее», «Отложить» и продолжение кнопкой «Помощь»
+• Ссылки в сообщениях открываются касанием, сообщение можно скопировать или переслать
+• Редактор видео: обрезка при просмотре и записи слайдшоу
+</ru-RU>
+<en-US>
+• Detailed tour with Alisa through every section, starting with the chat; Back, Next, Later — continue with “Help”
+• Links in messages open with a tap; messages can be copied or forwarded
+• Video editor: trim while watching or recording a slideshow
+</en-US>
+<sr>
+• Detaljna obuka sa Alisom kroz sve odeljke, od četa; Nazad, Dalje, Kasnije — nastavak dugmetom „Pomoć”
+• Linkovi u porukama otvaraju se dodirom; poruke se mogu kopirati ili proslediti
+• Uređivač videa: isecanje dok gledate ili snimate slajdšou
+</sr>

@@ -1,0 +1,21 @@
+<ru-RU>
+• Кнопка «Помощь»: Алиса покажет, как всё устроено
+• Меню стало проще — редкое убрано в «Ещё»
+• Чат: свои сообщения хорошо читаются
+• Перед публикацией в общий чат приложение спросит подтверждение
+• Приложение стало легче и быстрее
+</ru-RU>
+<en-US>
+• “Help” button: Alisa shows you how everything works
+• Simpler menu — rarely used items moved to “More”
+• Chat: your own messages are easy to read
+• The app asks before posting to the group chat
+• Smaller and faster app
+</en-US>
+<sr>
+• Дугме „Помоћ”: Алиса показује како све ради
+• Једноставнији мени — ређе ставке су у „Још”
+• Чет: ваше поруке се лако читају
+• Апликација пита пре објаве у заједничком чету
+• Апликација је мања и бржа
+</sr>

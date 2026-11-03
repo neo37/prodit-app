@@ -1,0 +1,15 @@
+<ru-RU>
+• Ссылки в сообщениях открываются касанием
+• Долгое нажатие на сообщение — «Копировать» и «Переслать» в другое приложение
+• Редактор видео, подробная помощь с Алисой, отправка и сборка роликов в свёрнутом приложении
+</ru-RU>
+<en-US>
+• Links in messages open with a tap
+• Long-press a message to Copy it or Forward it to another app
+• Video editor, detailed help with Alisa, sending and making videos while minimised
+</en-US>
+<sr>
+• Linkovi u porukama otvaraju se dodirom
+• Dugi pritisak na poruku — „Kopiraj” i „Prosledi” u drugu aplikaciju
+• Uređivač videa, detaljna pomoć sa Alisom, slanje i pravljenje snimaka kada je aplikacija umanjena
+</sr>

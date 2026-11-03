@@ -1,0 +1,18 @@
+<ru-RU>
+• Отправка видео и сборка роликов продолжаются, даже если свернуть приложение
+• Алиса подсказывает жесты в плеере и кнопки в чате
+• Запись просмотра — теперь и в слайдшоу «Офлайн»
+• Понятные значки во всех темах и подписи для TalkBack
+</ru-RU>
+<en-US>
+• Video sending and video making continue even when the app is minimised
+• Alisa shows gestures in the player and buttons in the chat
+• Viewing recording now also works in the Offline slideshow
+• Clear icons in every theme and TalkBack labels
+</en-US>
+<sr>
+• Slanje videa i pravljenje snimaka nastavljaju se i kada umanjite aplikaciju
+• Alisa pokazuje pokrete u plejeru i dugmad u četu
+• Snimanje gledanja sada i u slajdšou „Oflajn”
+• Jasne ikonice u svim temama i opisi za TalkBack
+</sr>
