@@ -1,0 +1,77 @@
+ПИСЬМО РУКОВОДИТЕЛЮ ВЕБ-СТУДИИ (коротко)
+-----------------------------------------
+Тема: Переезд Production IT — что нужно от вас
+
+Здравствуйте!
+
+Переносим сервисы Production IT (приложение, календарь встреч, видеосвязь) на новый сервер и домены.
+От вас нужно:
+
+1. Сервер: IP и доступ SSH (root или sudo), ОС Ubuntu 22.04/24.04, от 4 vCPU / 8 ГБ RAM, открытые порты
+   80, 443, 7881/TCP, 5349/TCP и 3478/UDP (TURN), 50000–60000/UDP (видеосвязь).
+2. Домены: какие будут (например api., meet., call. на вашем домене) и доступ к DNS — или пропишите A-записи
+   на новый IP по нашему списку.
+3. Почта: ящик-отправитель на новом домене (SMTP-доступ) и записи SPF/DKIM/DMARC — для писем с кодом входа
+   и приглашений на встречи.
+4. Срок и окно переезда (лучше вечер/выходной) — старые адреса держим как переадресацию минимум 3 месяца.
+
+Всё остальное (перенос данных, настройка, проверка) делаем сами.
+
+Спасибо!
+
+=========================================================================================================
+
+ПЕРЕЕЗД Production IT НА НОВЫЙ СЕРВЕР И ДОМЕНЫ — что нужно (3.11.2026)
+
+1. ЧТО СЕЙЧАС ГДЕ
+   spacecode (144.91.83.27):
+     - /opt/prodit            — API приложения (docker: php + centrifugo), .env с секретами, vapi_data/ (база, ключ Firebase)
+     - /opt/spacecode-meet    — календарь (systemd spacecode-meet), /etc/spacecode-meet.env, /var/lib/spacecode-meet/meetings.db
+     - /var/www/spacecode/meet — страница календаря; nginx: /prodit/, /prodit/connection/, /meet/api/
+   srv155 (155.212.161.75):  efir.umno.cloud — LiveKit + Meet + запись (/opt/livekit, infra/livekit/deploy.sh)
+
+2. ДАННЫЕ — СКОПИРОВАТЬ (остановив сервисы)
+   - /opt/prodit/.env и /opt/prodit/vapi_data/ целиком (social.sqlite, fcm-service-account.json)
+   - /etc/spacecode-meet.env и /var/lib/spacecode-meet/
+   - записи встреч LiveKit (/opt/livekit/out), если нужны
+
+3. ВАЖНО: АДРЕС API ЗАШИТ В ПРИЛОЖЕНИЕ
+   ChatActivity.CHAT_API = https://spacecode.business/prodit/video_api.php — менять только новой версией в Play.
+   Поэтому: либо оставить spacecode.business/prodit/ как прокси на новый сервер (минимум несколько месяцев),
+   либо сначала выпустить версию с новым адресом, дождаться обновления у всех, потом переезжать.
+   Лучше сразу: вынести адрес API в настройку/свой домен (api.<новый-домен>), чтобы больше не зависеть.
+
+4. МЕНЯЕТСЯ БЕЗ ВЫПУСКА ПРИЛОЖЕНИЯ — В АДМИНКЕ
+   https://<сервер>/prodit/video_api.php?action=prodit_admin&key=<ADMIN_KEY из .env>
+   - адрес выдачи токенов LiveKit, адрес LiveKit (wss://), ссылка на комнаты для гостей
+   - API календаря, адрес Centrifugo (wss://…/connection/websocket)
+   После правки — «Проверить LiveKit».
+
+5. ПРАВИТЬ В КОДЕ / КОНФИГАХ
+   - prodit/deploy_prodit.sh: HOST, nginx-файл сайта, allowed_origins Centrifugo (сейчас https://spacecode.business)
+   - meet/meet_api.py: ROOMS (efir.umno.cloud/rooms/), CALENDAR (spacecode.business/meet/) — ссылки в письмах
+   - meet/deploy_meet.sh: HOST, путь сайта, nginx
+   - php/prodit_ext.php: PRODIT_DEFAULTS (адреса по умолчанию)
+   - Prodit.java: DEFAULTS (запасные адреса до первого prodit_config)
+   - infra/livekit/deploy.sh (efir): аргументы доменов; комнаты productionit-* оформлены в meet/lib/brand.tsx
+   - privacy.html: ссылки и e-mail
+
+6. GOOGLE PLAY CONSOLE — ОБНОВИТЬ ССЫЛКИ
+   - Политика конфиденциальности (сейчас spacecode.business/prodit/privacy.html)
+   - Безопасность данных: URL удаления аккаунта/данных (…/privacy.html#delete)
+   - Доступ к приложению: аккаунт проверяющих review@prod-it.com (REVIEW_EMAIL/REVIEW_CODE в .env — перенести!)
+   - Карточка: сайт/контакты, если меняются
+
+7. ПОЧТА
+   Письма с кодом/приглашения идут через ящики umno (SMTP_* в .env). Новый домен отправителя — настроить SPF/DKIM,
+   иначе коды попадут в спам.
+
+8. ПОРЯДОК
+   1) поднять новый сервер (docker, nginx, TLS); 2) скопировать данные и .env; 3) выкатить deploy-скрипты на новый хост;
+   4) DNS новых доменов; 5) старый spacecode.business/prodit и /meet — прокси на новый (см. п.3);
+   6) админка: новые адреса LiveKit/Centrifugo; 7) Play Console: ссылки; 8) проверить: вход по коду, личка, push,
+   звонок (приложение + браузер), календарь и письма; 9) только потом гасить старое.
+
+9. НЕ ЗАБЫТЬ
+   Firebase (disl-da638) и ключ подписи prodit-upload.keystore от сервера не зависят — просто сохранить.
+   Бэкапы баз — до и после переезда.

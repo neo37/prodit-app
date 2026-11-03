@@ -7,8 +7,8 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <!-- 1.0: звонок без службы переднего плана (FGS microphone|camera вернуть в 1.1 вместе с LkCall.BACKGROUND и видео для декларации Play) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" tools:node="remove" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
@@ -49,9 +49,6 @@
             android:exported="false"
             android:launchMode="singleTask"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden" />
-        <service
-            android:name="online.magicbtn.player.LkCallService"
-            android:exported="false"
-            android:foregroundServiceType="microphone|camera" />
+        <!-- <service android:name="online.magicbtn.player.LkCallService" android:exported="false" android:foregroundServiceType="microphone|camera" /> — 1.1 -->
     </application>
 </manifest>
