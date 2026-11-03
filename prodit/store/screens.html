@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Production IT — экраны приложения</title>
+<!--
+  Экраны Android-приложения Production IT (com.prodit.meet) — по коду: ProditLoginActivity, ProditHomeActivity,
+  DmListActivity, ChatActivity, ProditMeetingsActivity, LkCallActivity. Палитра — Look.apply (Flags.PRODIT), форма — Ui.CONSOLE.
+  ?s=<id> — один экран 360×640 (для скриншотов 1080×1920 при deviceScaleFactor 3); без параметра — все экраны рядом.
+-->
+<style>
+@font-face{font-family:Onest;src:url(fonts/Onest-Regular.ttf);font-weight:400}
+@font-face{font-family:Onest;src:url(fonts/Onest-Medium.ttf);font-weight:500 700}
+:root{--bg:#12111C;--card:#1A1928;--ink:#F1F0F7;--gray:#9C99B5;--line:#2F2C4A;--acc:#5E27D4;--link:#B39BFF;--red:#D93A4A}
+*{box-sizing:border-box;margin:0}
+body{background:#0b0a12;font-family:Onest,system-ui,sans-serif;color:var(--ink);display:flex;flex-wrap:wrap;gap:28px;padding:28px;justify-content:center}
+body.one{padding:0;gap:0;background:var(--bg)}
+.phone{width:360px;height:640px;background:var(--bg);position:relative;overflow:hidden;display:flex;flex-direction:column;border-radius:28px;box-shadow:0 0 0 1px #2a2840}
+body.one .phone{border-radius:0;box-shadow:none}
+.sb{height:24px;display:flex;justify-content:space-between;align-items:center;padding:0 16px;font-size:12px;color:var(--ink);opacity:.85;flex:none}
+.cap{position:absolute;bottom:-26px;left:0;right:0;text-align:center;color:#77749a;font-size:12px}
+.wrap{position:relative}
+body.one .cap{display:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px}
+.btn{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 14px;border-radius:6px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:500 15px Onest}
+.btn.acc{background:var(--acc);border-color:var(--acc);color:#fff}
+.field{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;font-size:17px;color:var(--ink)}
+.field.ph{color:var(--gray)}
+.lbl{font-size:13px;color:var(--gray);padding:10px 4px 6px}
+.hdr{display:flex;align-items:center;gap:12px;padding:12px 16px 8px}
+.hdr .btn{width:44px;padding:0;font-size:22px}
+.hdr h1{font:700 20px Onest;flex:1}
+.muted{color:var(--gray)}
+/* вход */
+.login{padding:56px 22px 22px;display:flex;flex-direction:column}
+.logo{font:700 30px Onest;text-align:center;letter-spacing:.01em}
+.tag{font-size:15px;color:var(--gray);text-align:center;padding:6px 0 36px}
+.link{color:var(--link);font-size:14px;text-align:center;padding-top:14px}
+.code{font-size:28px;letter-spacing:.3em;text-align:center}
+/* главная */
+.home{padding:20px 18px}
+.home .t{font:700 24px Onest}
+.home .me{font-size:13px;color:var(--gray);padding:4px 0 18px}
+.row{display:flex;align-items:center;gap:14px;padding:14px;margin-bottom:12px}
+.row.big{padding:20px}
+.ic{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;font-size:20px;background:var(--bg);border:1px solid var(--line);flex:none}
+.big .ic{width:56px;height:56px;font-size:28px;background:var(--acc);border-color:var(--acc)}
+.row .tx{flex:1;min-width:0}
+.row .tx b{display:block;font:700 16px Onest}
+.big .tx b{font-size:20px}
+.row .tx span{font-size:13px;color:var(--gray)}
+.arrow{font-size:24px;color:var(--gray)}
+.out{text-align:center;color:var(--gray);font-size:14px;padding:22px 0 8px}
+.ver{text-align:center;color:var(--gray);font-size:11px}
+/* чаты */
+.list{padding:0 16px;display:flex;flex-direction:column;gap:8px}
+.th{display:flex;gap:10px;align-items:center;padding:10px 12px}
+.th.unread{background:var(--acc);border-color:var(--acc)}
+.ava{width:40px;height:40px;border-radius:10px;background:var(--acc);display:grid;place-items:center;font:700 16px Onest;flex:none}
+.th.unread .ava{background:#fff;color:var(--acc)}
+.th b{font:700 15px Onest;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.th span{font-size:13px;color:var(--gray);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.th.unread span{color:#fff}
+.status{font-size:13px;color:var(--gray);padding:10px 16px 4px}
+/* чат */
+.msgs{flex:1;padding:8px 14px;display:flex;flex-direction:column;gap:8px;justify-content:flex-end}
+.m{max-width:78%;padding:9px 12px;border-radius:10px;font-size:15px;line-height:1.35;background:var(--card);border:1px solid var(--line)}
+.m.mine{align-self:flex-end;background:var(--acc);border-color:var(--acc);color:#fff}
+.m small{display:block;font-size:11px;opacity:.7;margin-top:3px;text-align:right}
+.callmsg{align-self:flex-start;max-width:82%;padding:12px;border-radius:10px;background:var(--card);border:1px solid var(--line)}
+.callmsg .btn{margin-top:10px}
+.input{display:flex;gap:8px;padding:8px 12px 14px;align-items:center}
+.input .field{flex:1;padding:12px;font-size:15px}
+.input .btn{width:48px;padding:0;font-size:18px}
+/* встречи */
+.day{font-size:13px;color:var(--gray);padding:14px 4px 2px}
+.mt{display:flex;align-items:center;gap:8px;padding:14px;margin-top:8px}
+.mt .tm{width:56px;font:700 14px/1.35 Onest;flex:none}
+.mt .tm.live{color:var(--link)}
+.mt .tx{flex:1;min-width:0}
+.mt .tx b{display:block;font:700 16px Onest}
+.mt .tx span{font-size:13px;color:var(--gray)}
+.mt .btn{font-size:14px;min-width:64px}
+.hdr .btn.chip{width:auto;font-size:13px;min-height:36px;padding:6px 10px;white-space:nowrap}
+.hdr h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* звонок */
+.call{background:#0B0A12}
+.cinfo{font-size:14px;color:#C7C5D9;padding:12px 16px 8px}
+.stage{flex:1;position:relative;margin:0 8px}
+.tile{position:absolute;border-radius:14px;overflow:hidden;background:#1A1928}
+.tile .lab{position:absolute;left:8px;bottom:8px;background:rgba(0,0,0,.6);border-radius:8px;padding:3px 8px;font-size:12px}
+.face{position:absolute;inset:0}
+.ctrl{display:flex;justify-content:center;gap:14px;padding:12px 8px 16px}
+.ctrl div{width:56px;height:56px;border-radius:40px;background:#2C2A47;display:grid;place-items:center;font-size:22px}
+.ctrl .end{background:var(--red)}
+.ctrl .off{opacity:.45}
+.vid-ava{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);border-radius:50%;display:grid;place-items:center;font-weight:700;background:rgba(255,255,255,.14);border:2px solid rgba(255,255,255,.35);box-shadow:0 0 0 10px rgba(255,255,255,.05)}
+.notif{position:absolute;left:10px;right:10px;top:30px;padding:12px 14px;border-radius:16px;background:#262438;border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.4);z-index:5}
+.notif b{font:700 14px Onest}
+.notif div{font-size:13px;color:var(--gray)}
+</style>
+</head>
+<body>
+
+<!-- 1. Вход: email и имя -->
+<div class="wrap" data-s="login"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="login">
+    <div class="logo">Production IT</div>
+    <div class="tag">Чат, звонки и встречи команды</div>
+    <div class="lbl">Рабочий email</div><div class="field">anna@prod-it.com</div>
+    <div class="lbl">Как вас зовут</div><div class="field">Анна Смирнова</div>
+    <div style="height:20px"></div>
+    <div class="btn acc">Получить код</div>
+  </div></div><div class="cap">1 · Вход по email</div></div>
+
+<!-- 2. Вход: код -->
+<div class="wrap" data-s="code"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="login">
+    <div class="logo">Production IT</div>
+    <div class="tag">Чат, звонки и встречи команды</div>
+    <div class="lbl">Код из письма</div><div class="field code">482 913</div>
+    <div class="muted" style="font-size:14px;padding:10px 0">Код отправлен на anna@prod-it.com. Проверьте почту (и «Спам»).</div>
+    <div class="btn acc">Войти</div>
+    <div class="link">Отправить код ещё раз</div>
+    <div class="link">Другой email</div>
+  </div></div><div class="cap">2 · Код из письма — без паролей</div></div>
+
+<!-- 3. Главная -->
+<div class="wrap" data-s="home"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="home">
+    <div class="t">Production IT</div>
+    <div class="me">Анна Смирнова · anna@prod-it.com</div>
+    <div class="card row big"><div class="ic">💬</div><div class="tx"><b>Чаты</b><span>• 3 · Личная переписка и звонки</span></div><div class="arrow">›</div></div>
+    <div class="card row big"><div class="ic">📅</div><div class="tx"><b>Встречи</b><span>Календарь Production IT</span></div><div class="arrow">›</div></div>
+    <div class="card row"><div class="ic">✉</div><div class="tx"><b>Написать по email</b><span>Найти коллегу по адресу почты</span></div><div class="arrow">›</div></div>
+    <div class="card row"><div class="ic">👤</div><div class="tx"><b>Профиль</b><span>anna@prod-it.com</span></div><div class="arrow">›</div></div>
+    <div class="out">Выйти</div><div class="ver">v1.0</div>
+  </div></div><div class="cap">3 · Главный экран</div></div>
+
+<!-- 4. Список чатов -->
+<div class="wrap" data-s="chats"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="hdr"><div class="btn">‹</div><h1>Личные сообщения</h1></div>
+  <div class="status">Переписка видна только вам и собеседнику</div>
+  <div class="list">
+    <div class="card th unread"><div class="ava">И</div><div><b>Игорь Петров  •2   03.11 14:20</b><span>Созвонимся по релизу? Скинул ТЗ в почту</span></div></div>
+    <div class="card th unread"><div class="ava">М</div><div><b>Мария Ковач  •1   03.11 13:05</b><span>Макеты готовы, посмотри до встречи 👀</span></div></div>
+    <div class="card th"><div class="ava">Д</div><div><b>Дмитрий Орлов   03.11 11:42</b><span>Вы: Отлично, тогда в 16:00 в эфире</span></div></div>
+    <div class="card th"><div class="ava">Е</div><div><b>Елена Николич   02.11 18:30</b><span>📞 Звонок · 12 мин</span></div></div>
+    <div class="card th"><div class="ava">A</div><div><b>Alex Brown   02.11 10:15</b><span>Thanks! See you on Friday</span></div></div>
+  </div></div><div class="cap">4 · Чаты один на один</div></div>
+
+<!-- 5. Чат со звонком -->
+<div class="wrap" data-s="chat"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="hdr"><div class="btn">‹</div><h1>Игорь Петров</h1><div class="btn" style="font-size:18px">📞</div><div class="btn" style="font-size:18px">☆</div></div>
+  <div class="msgs">
+    <div class="m">Привет! Посмотрел демо — есть пара вопросов по оплате<small>14:12</small></div>
+    <div class="m mine">Давай созвонимся, покажу на экране<small>14:14 ✓✓</small></div>
+    <div class="m">Созвонимся по релизу? Скинул ТЗ в почту<small>14:20</small></div>
+    <div class="callmsg">📞 Звонок — нажмите, чтобы присоединиться<div class="btn acc">📞 Присоединиться</div></div>
+  </div>
+  <div class="input"><div class="field ph">Сообщение…</div><div class="btn acc">➤</div></div>
+  </div><div class="cap">5 · Переписка и звонок в один тап</div></div>
+
+<!-- 6. Встречи -->
+<div class="wrap" data-s="meetings"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="hdr"><div class="btn">‹</div><h1>Встречи</h1><div class="btn chip">Только мои</div><div class="btn acc" style="width:44px;padding:0;font-size:22px">+</div></div>
+  <div style="padding:0 16px">
+    <div class="day">Сегодня</div>
+    <div class="card mt"><div class="tm live">14:30<br>15:00</div><div class="tx"><b>Планёрка · идёт</b><span>Организатор: Дмитрий Орлов</span></div><div class="btn acc">Войти</div></div>
+    <div class="card mt"><div class="tm">16:00<br>17:00</div><div class="tx"><b>Демо для клиента</b><span>Организатор: Анна Смирнова</span></div><div class="btn">Войти</div></div>
+    <div class="day">Завтра</div>
+    <div class="card mt"><div class="tm">10:00<br>10:30</div><div class="tx"><b>Ретро спринта</b><span>Организатор: Мария Ковач</span></div><div class="btn">Войти</div></div>
+    <div class="card mt"><div class="tm">12:00<br>13:00</div><div class="tx"><b>Собеседование</b><span>Организатор: Игорь Петров</span></div><div class="btn">Войти</div></div>
+  </div></div><div class="cap">6 · Календарь встреч команды</div></div>
+
+<!-- 7. Звонок -->
+<div class="wrap" data-s="call"><div class="phone call"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="cinfo">Демо для клиента   ·   12:47   ·   👥 2</div>
+  <div class="stage">
+    <div class="tile" style="inset:0"><div class="face" style="background:radial-gradient(70% 55% at 30% 30%,#6b4fd8 0,transparent 60%),radial-gradient(60% 50% at 80% 80%,#e58fb0 0,transparent 60%),#221d3d;filter:saturate(1.1)"></div><div class="vid-ava" style="width:132px;height:132px;font-size:48px">ИП</div><div class="lab">Игорь Петров  ●</div></div>
+    <div class="tile" style="top:10px;right:10px;width:110px;height:160px;border:1px solid #2f2c4a"><div class="face" style="background:radial-gradient(80% 60% at 30% 20%,#8a4fd8 0,transparent 65%),#1f1a36"></div><div class="vid-ava" style="width:58px;height:58px;font-size:22px">АС</div><div class="lab">Анна</div></div>
+  </div>
+  <div class="ctrl"><div>🎤</div><div>📷</div><div>🔄</div><div>🔗</div><div class="end">✕</div></div>
+  </div><div class="cap">7 · Видеозвонок прямо в приложении</div></div>
+
+<!-- 8. Входящий звонок (уведомление) поверх главной -->
+<div class="wrap" data-s="incoming"><div class="phone"><div class="sb"><span>9:41</span><span>▂▄▆ ●</span></div>
+  <div class="notif"><b>📞 Мария Ковач</b><div>Входящий звонок · Production IT</div>
+    <div style="display:flex;gap:10px;margin-top:10px"><div class="btn" style="flex:1;background:#D93A4A;border-color:#D93A4A">Отклонить</div><div class="btn acc" style="flex:1">Принять</div></div></div>
+  <div class="home" style="opacity:.35">
+    <div class="t">Production IT</div><div class="me">Анна Смирнова · anna@prod-it.com</div>
+    <div class="card row big"><div class="ic">💬</div><div class="tx"><b>Чаты</b><span>Личная переписка и звонки</span></div><div class="arrow">›</div></div>
+    <div class="card row big"><div class="ic">📅</div><div class="tx"><b>Встречи</b><span>Календарь Production IT</span></div><div class="arrow">›</div></div>
+  </div></div><div class="cap">8 · Звонки и сообщения — мгновенно</div></div>
+
+<script>
+const s = new URLSearchParams(location.search).get('s');
+if (s) {
+  document.body.classList.add('one');
+  document.querySelectorAll('.wrap').forEach(w => { if (w.dataset.s !== s) w.remove(); });
+}
+</script>
+</body>
+</html>
