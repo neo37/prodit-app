@@ -51,6 +51,8 @@ public class ProditHomeActivity extends Activity {
 
         chatsSub = card(col, "💬", Prodit.t("chats"), Prodit.t("chats_sub"), true,
                 () -> startActivity(DmListActivity.open(this)));
+        card(col, "👥", Prodit.t("team_chat"), Prodit.t("team_chat_sub"), true,
+                () -> startActivity(new Intent(this, ChatActivity.class)));
         card(col, "📅", Prodit.t("meetings"), Prodit.t("meetings_sub"), true,
                 () -> startActivity(new Intent(this, ProditMeetingsActivity.class)));
         card(col, "✉", Prodit.t("new_chat"), Prodit.t("new_chat_sub"), false, this::newChat);

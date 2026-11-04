@@ -37,11 +37,17 @@ public class ProditMeetingsActivity extends Activity {
     private TextView status, filter;
     private JSONArray items;
     private boolean onlyMine = true;
+    /** 1.1: вид «Календарь» — тот же календарь, что на spacecode.business/meet (неделя/день), внутри приложения. */
+    private boolean gridView;
+    private android.webkit.WebView web;
+    private android.widget.FrameLayout body;
+    private TextView viewBtn;
 
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         onlyMine = getSharedPreferences("prodit", 0).getBoolean("only_mine", true);
+        gridView = getSharedPreferences("prodit", 0).getBoolean("cal_grid", false);
         LinearLayout col = new LinearLayout(this);
         col.setOrientation(LinearLayout.VERTICAL);
         col.setBackgroundColor(Ui.BG);
@@ -68,6 +74,16 @@ public class ProditMeetingsActivity extends Activity {
             show();
         });
         header.addView(filter);
+        viewBtn = Ui.button(this, "", Ui.WHITE);
+        viewBtn.setTextSize(13);
+        viewBtn.setOnClickListener(v -> {
+            gridView = !gridView;
+            getSharedPreferences("prodit", 0).edit().putBoolean("cal_grid", gridView).apply();
+            applyView();
+        });
+        LinearLayout.LayoutParams vl = new LinearLayout.LayoutParams(-2, -2);
+        vl.leftMargin = Ui.dp(this, 8);
+        header.addView(viewBtn, vl);
         TextView add = Ui.button(this, "+", Ui.YELLOW);
         add.setOnClickListener(v -> create());
         LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(-2, -2);
@@ -87,15 +103,63 @@ public class ProditMeetingsActivity extends Activity {
         list.setOrientation(LinearLayout.VERTICAL);
         list.setPadding(p, 0, p, p);
         scroll.addView(list);
-        col.addView(scroll, new LinearLayout.LayoutParams(-1, 0, 1));
+        body = new android.widget.FrameLayout(this);
+        body.addView(scroll, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        col.addView(body, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(col);
         Ui.fitSystemBars(this);
+        applyView();
+    }
+
+    /** Переключить вид: список встреч ⇄ календарь как на сайте. */
+    private void applyView() {
+        viewBtn.setText(gridView ? "☰ " + Prodit.t("cal_list") : "▦ " + Prodit.t("cal_grid"));
+        filter.setVisibility(gridView ? android.view.View.GONE : android.view.View.VISIBLE);
+        status.setVisibility(gridView ? android.view.View.GONE : android.view.View.VISIBLE);
+        if (gridView) {
+            if (web == null) {
+                web = new android.webkit.WebView(this);
+                web.setBackgroundColor(Ui.BG);
+                android.webkit.WebSettings ws = web.getSettings();
+                ws.setJavaScriptEnabled(true);
+                ws.setDomStorageEnabled(true);
+                web.setWebViewClient(new android.webkit.WebViewClient() {
+                    @Override
+                    public boolean shouldOverrideUrlLoading(android.webkit.WebView v, android.webkit.WebResourceRequest req) {
+                        String u = req.getUrl().toString();
+                        java.util.regex.Matcher m = java.util.regex.Pattern.compile("/rooms/([A-Za-z0-9_-]{6,64})").matcher(u);
+                        if (m.find()) {   // «Присоединиться» — звонок в приложении, а не в браузере
+                            Prodit.openCall(ProditMeetingsActivity.this, m.group(1), null);
+                            return true;
+                        }
+                        if (u.startsWith("https://spacecode.business/meet")) return false;
+                        try {
+                            startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl()));
+                        } catch (Exception ignored) {
+                        }
+                        return true;
+                    }
+                });
+                web.loadUrl("https://spacecode.business/meet/");   // тёмная тема у календаря по умолчанию
+                body.addView(web, new android.widget.FrameLayout.LayoutParams(-1, -1));
+            }
+            web.setVisibility(android.view.View.VISIBLE);
+        } else if (web != null) {
+            web.setVisibility(android.view.View.GONE);
+            load();
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        if (gridView && web != null && web.canGoBack()) web.goBack();
+        else super.onBackPressed();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        load();
+        if (!gridView) load();
     }
 
     private void load() {

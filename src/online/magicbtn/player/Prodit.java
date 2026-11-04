@@ -134,6 +134,10 @@ final class Prodit {
         s("mail_failed", "Не удалось отправить письмо, попробуйте позже", "Could not send the email, try later", "Слање није успело, покушајте касније");
         s("offline", "Нет связи с сервером", "No connection to the server", "Нема везе са сервером");
         s("chats", "Чаты", "Chats", "Четови");
+        s("team_chat", "Общий чат", "Team chat", "Заједнички чет");
+        s("team_chat_sub", "Вся команда Production IT", "Everyone at Production IT", "Цео тим Production IT");
+        s("cal_list", "Список", "List", "Листа");
+        s("cal_grid", "Календарь", "Calendar", "Календар");
         s("chats_sub", "Личная переписка и звонки", "Direct messages and calls", "Лична преписка и позиви");
         s("meetings", "Встречи", "Meetings", "Састанци");
         s("meetings_sub", "Календарь Production IT", "Production IT calendar", "Календар Production IT");

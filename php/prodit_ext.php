@@ -39,7 +39,10 @@ const PRODIT_LABELS = [
 const PRODIT_ACTIONS = ['prodit_config', 'prodit_auth_start', 'prodit_auth_verify', 'prodit_find', 'prodit_invite',
     'prodit_meetings', 'prodit_meet_create', 'prodit_rt_token', 'prodit_admin'];
 // действия плеера, которые в Production IT только после входа по email
-const PRODIT_NEED_LOGIN = ['dm_threads', 'dm', 'dm_post', 'dm_delete', 'dm_block', 'users', 'push_register', 'avatar_set', 'hello'];
+const PRODIT_NEED_LOGIN = ['dm_threads', 'dm', 'dm_post', 'dm_delete', 'dm_block', 'users', 'push_register', 'avatar_set', 'hello',
+    'chat', 'chat_post', 'chat_delete', 'report'];
+// общий чат Production IT — своя тема push: Firebase-проект общий с Умным плеером, тема «chat» у него своя
+const PUSH_CHAT_TOPIC = 'prodit_chat';
 
 function prodit_db(): PDO
 {
@@ -495,8 +498,4 @@ if (in_array($prodit_action, PRODIT_ACTIONS, true)) {
 }
 if (in_array($prodit_action, PRODIT_NEED_LOGIN, true)) {
     prodit_me();
-}
-// общий чат «на весь мир» плеера в Production IT не нужен
-if (in_array($prodit_action, ['chat', 'chat_post'], true)) {
-    fail(404, 'disabled');
 }

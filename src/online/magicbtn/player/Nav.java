@@ -248,6 +248,13 @@ final class Nav {
             launch(a, idx, true);
             return;
         }
+        // 3.12.2: ссылка вглубь сайта (путь или параметры) — открываем именно эту страницу, а не общий API сайта
+        android.net.Uri su = android.net.Uri.parse(s.url);
+        String sp = su.getPath();
+        if ((sp != null && sp.length() > 1) || su.getQuery() != null) {
+            launch(a, idx, false);
+            return;
+        }
         Toast.makeText(a, Ui.t(R.string.connecting), Toast.LENGTH_SHORT).show();
         new Thread(() -> {
             String api = Sources.probeApi(s.url, s.key);

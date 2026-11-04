@@ -17,7 +17,8 @@ import org.json.JSONObject;
  */
 final class Push {
 
-    static final String TOPIC_CHAT = "chat";
+    /** Тема общего чата: у Production IT своя (Firebase-проект общий с Умным плеером). */
+    static final String TOPIC_CHAT = Flags.PRODIT ? "prodit_chat" : "chat";
     private static boolean ready;
 
     private Push() {
@@ -58,7 +59,6 @@ final class Push {
     }
 
     static boolean chatEnabled(Context c) {
-        if (Flags.PRODIT) return false;   // в Production IT общего чата нет — и темы «chat» тоже
         return prefs(c).getBoolean("chat", true);
     }
 

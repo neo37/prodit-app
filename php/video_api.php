@@ -639,7 +639,7 @@ function action_chat_post(): void
     set_setting('chat_last', (string)$id);
     $pushText = $text !== '' ? $text : '🎬 ' . (string)($_GET['share_name'] ?? '');
     $author = author_id($uid);
-    push_later(fn() => push_topic('chat', ['type' => 'chat', 'name' => $name !== '' ? $name : 'Guest',
+    push_later(fn() => push_topic(defined('PUSH_CHAT_TOPIC') ? PUSH_CHAT_TOPIC : 'chat', ['type' => 'chat', 'name' => $name !== '' ? $name : 'Guest',
         'text' => mb_substr($pushText, 0, 150), 'author' => $author]));
     json_out(['ok' => true, 'id' => $id]);
 }

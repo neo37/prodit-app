@@ -30,7 +30,7 @@ public class App extends Application implements Application.ActivityLifecycleCal
                 if (chat) chatCheckedAt = System.currentTimeMillis();
                 new Thread(() -> {
                     Notify.check(App.this, true);
-                    if (chat && !Flags.PRODIT) Inbox.checkChat(App.this, true);   // в Production IT общего чата нет   // общий чат — реже
+                    if (chat) Inbox.checkChat(App.this, true);   // общий чат (у Production IT — чат команды)   // общий чат — реже
                     checking = false;
                 }).start();
             }

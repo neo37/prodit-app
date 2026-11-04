@@ -155,7 +155,7 @@ def main():
 
         print('вход по email')
         check('без входа личка закрыта', call('dm_threads')[0] == 401)
-        check('общий чат выключен', call('chat')[0] == 404)
+        check('общий чат — только после входа', call('chat')[0] == 401)
         check('кривой email — 400', call('prodit_auth_start', {'email': 'nope'})[0] == 400)
         s, code, (s2, a) = login('A@example.com', 'Анна', 'device00000001')
         check('письмо с кодом ушло', s == 200 and len(code) == 6)
@@ -192,6 +192,12 @@ def main():
         check('неверный код — 401', call('prodit_auth_verify', {'email': 'review@prod-it.com', 'code': '000000'}, uid='device00000050')[0] == 401)
         s, o = call('prodit_auth_verify', {'email': 'review@prod-it.com', 'code': '135790', 'name': 'Google Review'}, uid='device00000050')
         check('постоянный код пускает', s == 200 and o.get('uid', '').startswith('p'))
+
+        print('общий чат команды')
+        s, o = call('chat_post', {'text': 'всем привет', 'name': 'Анна'}, uid=UA)
+        check('сообщение в общий чат', s == 200 and o.get('ok'))
+        s, o = call('chat', uid=UB)
+        check('виден другому участнику', s == 200 and any(m.get('text') == 'всем привет' for m in o.get('items', [])))
 
         print('встречи и Centrifugo')
         s, o = call('prodit_meetings', uid=UA)
