@@ -37,7 +37,11 @@ const PRODIT_LABELS = [
     'support_email'=> 'Email поддержки (кнопка «Написать в поддержку»)',
 ];
 const PRODIT_ACTIONS = ['prodit_config', 'prodit_auth_start', 'prodit_auth_verify', 'prodit_find', 'prodit_invite',
-    'prodit_meetings', 'prodit_meet_create', 'prodit_rt_token', 'prodit_admin'];
+    'prodit_meetings', 'prodit_meet_create', 'prodit_rt_token', 'prodit_admin', 'prodit_company', 'prodit_remind', 'prodit_backlog'];
+// публичные почтовые сервисы — у их пользователей нет «компании» по домену
+const PRODIT_PUBLIC_MAIL = ['gmail.com', 'googlemail.com', 'yandex.ru', 'ya.ru', 'yandex.com', 'mail.ru', 'bk.ru', 'inbox.ru', 'list.ru',
+    'rambler.ru', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'me.com', 'yahoo.com', 'proton.me', 'protonmail.com', 'gmx.com',
+    'gmx.de', 'aol.com', 'zoho.com', 'tutanota.com', 'mail.com'];
 // действия плеера, которые в Production IT только после входа по email
 const PRODIT_NEED_LOGIN = ['dm_threads', 'dm', 'dm_post', 'dm_delete', 'dm_block', 'users', 'push_register', 'avatar_set', 'hello',
     'chat', 'chat_post', 'chat_delete', 'report'];
@@ -88,6 +92,113 @@ function prodit_me(): array
         fail(401, 'login required');
     }
     return $acc;
+}
+
+/** Домен компании по email; '' — публичная почта (gmail и т.п.) */
+function prodit_domain(string $email): string
+{
+    $d = strtolower(substr(strrchr($email, '@') ?: '', 1));
+    return ($d === '' || in_array($d, PRODIT_PUBLIC_MAIL, true)) ? '' : $d;
+}
+
+/** Комнаты общего чата Production IT: 'backlog' — всем вошедшим; 'co:<домен>' — только сотрудникам домена. */
+function chat_room_allowed(string $room): bool
+{
+    $acc = prodit_account(uid(true));
+    if (!$acc) {
+        return false;
+    }
+    if ($room === 'backlog') {
+        return true;
+    }
+    return str_starts_with($room, 'co:') && substr($room, 3) !== '' && substr($room, 3) === prodit_domain($acc['email']);
+}
+
+/** push сообщения комнаты: чат компании — сотрудникам домена (кроме автора), бэклог — без push. */
+function chat_room_push(string $room, string $sender, array $data): void
+{
+    if (!str_starts_with($room, 'co:')) {
+        return;
+    }
+    $q = prodit_db()->prepare('SELECT author FROM prodit_accounts WHERE email LIKE ?');
+    $q->execute(['%@' . substr($room, 3)]);
+    foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $a) {
+        if ($a !== $sender) {
+            push_author($a, $data, false);
+        }
+    }
+}
+
+function prodit_company(): void
+{
+    $me = prodit_me();
+    $d = prodit_domain($me['email']);
+    if ($d === '') {
+        json_out(['ok' => true, 'domain' => '', 'members' => []]);
+        return;
+    }
+    $q = prodit_db()->prepare('SELECT a.author, a.email, COALESCE(u.name, \'\') AS name, COALESCE(u.seen, 0) AS seen
+        FROM prodit_accounts a LEFT JOIN users u ON u.uid = a.uid WHERE a.email LIKE ? ORDER BY name, a.email');
+    $q->execute(['%@' . $d]);
+    $members = [];
+    foreach ($q->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        if ($r['author'] === $me['author']) {
+            continue;
+        }
+        $members[] = ['author' => $r['author'], 'email' => $r['email'], 'name' => $r['name'] ?: explode('@', $r['email'])[0],
+            'online' => time() - (int)$r['seen'] < 300];
+    }
+    json_out(['ok' => true, 'domain' => $d, 'room' => 'co:' . $d, 'members' => $members]);
+}
+
+/** Публичное чтение «Бэклога» — для страницы spacecode.business/production-it/ (только чтение, без email). */
+function prodit_backlog(): void
+{
+    $q = prodit_db()->prepare("SELECT id, name, text, ts FROM chat WHERE room = 'backlog' ORDER BY id DESC LIMIT 60");
+    $q->execute();
+    $items = array_map(fn($r) => ['id' => (int)$r['id'], 'name' => $r['name'] ?: 'Production IT', 'text' => $r['text'],
+        'ts' => gmdate('c', (int)$r['ts'])], array_reverse($q->fetchAll(PDO::FETCH_ASSOC)));
+    header('Access-Control-Allow-Origin: https://spacecode.business');
+    json_out(['ok' => true, 'items' => $items]);
+}
+
+/** Напоминания: за ~10 минут до встречи — push участникам с приложением. Вызывает контейнер cron раз в минуту. */
+function prodit_remind(): void
+{
+    $k = (string)getenv('RT_API_KEY');
+    if ($k === '' || !hash_equals($k, (string)($_SERVER['HTTP_X_REMIND_KEY'] ?? ''))) {
+        fail(401, 'Unauthorized');
+    }
+    $db = prodit_db();
+    $db->exec('CREATE TABLE IF NOT EXISTS prodit_reminded (uid TEXT, start TEXT, PRIMARY KEY (uid, start))');
+    $d = prodit_meet_call('list', null);
+    $now = time();
+    $sent = 0;
+    foreach ($d['items'] ?? [] as $m) {
+        $t = strtotime((string)$m['start']);
+        if ($t === false || $t <= $now || $t > $now + 11 * 60) {
+            continue;
+        }
+        $ins = $db->prepare('INSERT OR IGNORE INTO prodit_reminded VALUES (?, ?)');
+        $ins->execute([(string)$m['uid'], (string)$m['start']]);
+        if (!$ins->rowCount()) {
+            continue;
+        }
+        $emails = array_map('strtolower', array_merge($m['emails'] ?? [], [(string)($m['organizer_email'] ?? '')]));
+        $emails = array_values(array_unique(array_filter($emails)));
+        if (!$emails) {
+            continue;
+        }
+        $q = $db->prepare('SELECT author FROM prodit_accounts WHERE email IN (' . implode(',', array_fill(0, count($emails), '?')) . ')');
+        $q->execute($emails);
+        $room = basename(parse_url((string)$m['link'], PHP_URL_PATH));
+        foreach ($q->fetchAll(PDO::FETCH_COLUMN) as $a) {
+            push_author($a, ['type' => 'meeting', 'title' => (string)$m['title'], 'room' => $room,
+                'minutes' => (string)max(1, (int)round(($t - $now) / 60))], true);
+            $sent++;
+        }
+    }
+    json_out(['ok' => true, 'sent' => $sent]);
 }
 
 function prodit_lang(): string
@@ -272,7 +383,8 @@ function prodit_auth_verify(): void
             ON CONFLICT(uid) DO UPDATE SET name = excluded.name, seen = excluded.seen')
             ->execute([$acc['uid'], $acc['author'], $name, time(), time()]);
     }
-    json_out(['ok' => true, 'uid' => $acc['uid'], 'author' => $acc['author'], 'email' => $email, 'name' => $name]);
+    json_out(['ok' => true, 'uid' => $acc['uid'], 'author' => $acc['author'], 'email' => $email, 'name' => $name,
+        'domain' => prodit_domain($email)]);
 }
 
 function prodit_find(): void
@@ -365,6 +477,15 @@ function prodit_meet_create(): void
     $q->execute([$me['uid']]);
     $b = prodit_body();
     $emails = array_values(array_filter(array_map('strval', is_array($b['emails'] ?? null) ? $b['emails'] : [])));
+    if (!empty($b['with'])) {   // «Запланировать встречу» из диалога: собеседник по номеру автора
+        $q = prodit_db()->prepare('SELECT email FROM prodit_accounts WHERE author = ?');
+        $q->execute([(string)$b['with']]);
+        $e = $q->fetchColumn();
+        if (!$e) {
+            fail(404, 'not registered');
+        }
+        $emails[] = $e;
+    }
     $d = prodit_meet_call('create', [
         'key' => (string)getenv('MEET_KEY'), 'client' => 'prodit-' . $me['author'],
         'title' => (string)($b['title'] ?? ''), 'start' => (string)($b['start'] ?? ''), 'tz' => (string)($b['tz'] ?? 'Europe/Moscow'),
@@ -479,7 +600,7 @@ HTML;
 
 $prodit_action = (string)($_GET['action'] ?? '');
 if (in_array($prodit_action, PRODIT_ACTIONS, true)) {
-    $post = in_array($prodit_action, ['prodit_auth_start', 'prodit_auth_verify', 'prodit_invite', 'prodit_meet_create'], true);
+    $post = in_array($prodit_action, ['prodit_auth_start', 'prodit_auth_verify', 'prodit_invite', 'prodit_meet_create', 'prodit_remind'], true);
     if ($prodit_action !== 'prodit_admin' && $_SERVER['REQUEST_METHOD'] !== ($post ? 'POST' : 'GET')) {
         fail(405, 'method not allowed');
     }
@@ -493,6 +614,9 @@ if (in_array($prodit_action, PRODIT_ACTIONS, true)) {
         'prodit_meet_create' => prodit_meet_create(),
         'prodit_rt_token' => prodit_rt_token(),
         'prodit_admin' => prodit_admin(),
+        'prodit_company' => prodit_company(),
+        'prodit_backlog' => prodit_backlog(),
+        'prodit_remind' => prodit_remind(),
     };
     exit;
 }

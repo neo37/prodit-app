@@ -61,6 +61,17 @@ public class ChatActivity extends Activity {
         return peer != null;
     }
 
+    /** Production IT: комната общего чата (co:<домен> — чат компании, backlog — «Бэклог»); null — общий чат. */
+    private String room;
+
+    static android.content.Intent room(android.content.Context c, String room, String title) {
+        return new android.content.Intent(c, ChatActivity.class).putExtra("room", room).putExtra("room_title", title);
+    }
+
+    private String roomQ() {
+        return room == null ? "" : "&room=" + android.net.Uri.encode(room);
+    }
+
     private String post() {
         return isDm() ? "action=dm_post" : "action=chat_post";
     }
@@ -69,6 +80,7 @@ public class ChatActivity extends Activity {
     private JSONObject body(String text) throws Exception {
         JSONObject b = new JSONObject().put("text", text).put("name", Social.name(this).isEmpty() ? "Guest" : Social.name(this));
         if (isDm()) b.put("to", peer).put("to_name", peerName);
+        if (room != null) b.put("room", room);
         return b;
     }
 
@@ -76,6 +88,7 @@ public class ChatActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         peer = getIntent().getStringExtra("peer");
+        room = getIntent().getStringExtra("room");
         peerName = getIntent().getStringExtra("peer_name");
         if (peerName == null || peerName.isEmpty()) peerName = "Guest";
         String saved = peer == null ? null : Contacts.name(this, peer);
@@ -92,13 +105,20 @@ public class ChatActivity extends Activity {
         back.setOnClickListener(v -> finish());
         header.addView(back);
         TextView title = new TextView(this);
-        title.setText(isDm() ? "✉ " + peerName : Ui.t(R.string.chat_title));
+        title.setText(isDm() ? "✉ " + peerName : room != null ? getIntent().getStringExtra("room_title") : Ui.t(R.string.chat_title));
         title.setSingleLine(true);
         title.setTextSize(20);
         title.setTypeface(Typeface.DEFAULT_BOLD);
         title.setTextColor(Ui.BLACK);
         title.setPadding(Ui.dp(this, 12), 0, 0, 0);
         header.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+        if (isDm() && Flags.PRODIT) {   // Production IT: 📅 — запланировать встречу с собеседником
+            TextView plan = Ui.button(this, "📅", Ui.WHITE);
+            plan.setOnClickListener(v -> ProditMeetingsActivity.createDialog(this, peer, peerName, null));
+            LinearLayout.LayoutParams pl = new LinearLayout.LayoutParams(-2, -2);
+            pl.leftMargin = Ui.dp(this, 6);
+            header.addView(plan, pl);
+        }
         if (isDm()) {   // 📞 — звонок через efir.umno.cloud, ☆ — в контакты
             TextView call = Ui.button(this, "📞", Ui.WHITE);
             call.setOnClickListener(v -> Calls.start(this, peer, peerName));
@@ -215,7 +235,7 @@ public class ChatActivity extends Activity {
         loading = true;
         new Thread(() -> {
             try {
-                JSONObject o = Social.call(this, CHAT_API, "", (isDm() ? "action=dm&with=" + peer : "action=chat")
+                JSONObject o = Social.call(this, CHAT_API, "", (isDm() ? "action=dm&with=" + peer : "action=chat" + roomQ())
                         + "&since=" + lastId, "GET", null);
                 if (!isDm()) DmListActivity.refreshUnread(this, n -> main.post(() -> {
                     if (dmBtn != null) dmBtn.setText(n > 0 ? "✉ " + n : "✉");
@@ -242,7 +262,7 @@ public class ChatActivity extends Activity {
         if (m == null) return;
         if (m.optInt("id") > 0 && !shown.add(m.optInt("id"))) return;   // это сообщение уже на экране
         lastId = Math.max(lastId, m.optInt("id"));
-        if (!isDm() && generalOpen) Inbox.seenChat(this, lastId);
+        if (!isDm() && room == null && generalOpen) Inbox.seenChat(this, lastId);
         if (!m.optBoolean("mine") && Block.blocked(this, m.optString("author"))) return; // автор заблокирован
         boolean mine = m.optBoolean("mine");
         LinearLayout b = new LinearLayout(this);

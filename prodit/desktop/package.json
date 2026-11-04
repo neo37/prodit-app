@@ -1,0 +1,39 @@
+{
+  "name": "production-it-desktop",
+  "productName": "Production IT",
+  "version": "1.0.0",
+  "description": "Production IT — чат, звонки и встречи команды (Windows)",
+  "main": "main.js",
+  "author": "Production IT",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "start:local": "electron . --url=http://127.0.0.1:18150/production-it/app/",
+    "dist:win": "electron-builder --win --x64"
+  },
+  "build": {
+    "appId": "com.prodit.desktop",
+    "productName": "Production IT",
+    "copyright": "© Production IT",
+    "asar": true,
+    "files": ["main.js", "package.json", "build/icon.png", "build/icon.ico"],
+    "directories": { "output": "../../dist/prodit/desktop", "buildResources": "build" },
+    "afterPack": "./build-tools/set-exe-icon.cjs",
+    "win": {
+      "target": [
+        { "target": "portable", "arch": ["x64"] },
+        { "target": "zip", "arch": ["x64"] }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "artifactName": "ProductionIT-${version}-win-x64.${ext}"
+    },
+    "portable": { "artifactName": "ProductionIT-${version}-portable.exe" }
+  },
+  "devDependencies": {
+    "electron": "33.4.11",
+    "electron-builder": "^25.1.8",
+    "resedit": "^2.0.3"
+  }
+}

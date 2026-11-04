@@ -100,6 +100,7 @@ android {
     buildTypes {
         release {
             minifyEnabled true   // R8: сжатие и обфускация (Google Play: «DEX code optimization»)
+            shrinkResources true   // 05.11.2026: рекомендация Play — убрать неиспользуемые ресурсы (поиска ресурсов по имени в коде нет)
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -123,6 +124,9 @@ dependencies {
     // implementation 'com.google.android.ump:user-messaging-platform:3.1.0'
     // 3.6: предложить обновиться из Google Play (окно Play «Доступно обновление»)
     implementation 'com.google.android.play:app-update:2.1.0'
+    // 05.11.2026: Play — «устаревшие androidx.fragment 1.1.0 / androidx.activity 1.0.0» (транзитивно) — поднимаем явно
+    implementation 'androidx.fragment:fragment:1.8.9'
+    implementation 'androidx.activity:activity:1.10.1'
     // Production IT: звонки (LiveKit Android SDK, Apache-2.0) и мгновенная доставка (Centrifugo, MIT) — только в этой сборке
     proditImplementation 'io.livekit:livekit-android:2.30.0'
     proditImplementation 'io.github.centrifugal:centrifuge-java:0.8.0'

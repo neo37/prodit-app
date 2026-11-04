@@ -11,7 +11,7 @@
 /* тёмная тема — по умолчанию (кнопка ☀/☾ в шапке, выбор запоминается) */
 html[data-theme=dark]{color-scheme:dark;--ink:#f1f0f7;--text:#c7c5d9;--sub:#9c99b5;--muted:#77749a;--line:#2f2c4a;--soft:#2a2350;--card:#1a1928;--field:#12111c;--grid:#24223a;--past1:#161524;--past2:#1b1a2b;--page:#12111c;--shade:rgba(0,0,0,.25);--dim:rgba(0,0,0,.6)}
 html[data-theme=dark] body{background:radial-gradient(700px 480px at 100% 0%,rgba(94,39,212,.28),transparent 70%),radial-gradient(600px 420px at 0% 100%,rgba(236,120,160,.10),transparent 70%),#12111c}
-.theme{width:38px;height:38px;border-radius:40px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:17px;cursor:pointer}
+.theme{display:grid;place-items:center;width:38px;height:38px;border-radius:40px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:17px;cursor:pointer}
 *{box-sizing:border-box}
 body{margin:0;min-height:100vh;font:400 16px/1.5 Gilroy,system-ui,sans-serif;color:var(--text);
 background:radial-gradient(700px 480px at 100% 0%,rgba(94,39,212,.16),transparent 70%),radial-gradient(600px 420px at 0% 100%,rgba(236,120,160,.14),transparent 70%),#f5f5f9}
@@ -95,14 +95,19 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
     <button class="btn ghost" id="today" data-t="today"></button>
     <button class="btn ghost icon" id="next" aria-label="next">›</button>
     <div class="range" id="range"></div>
+    <select class="btn ghost" id="space" style="padding:0 12px;max-width:220px"></select>
+    <button class="btn ghost" id="mode"></button>
     <button class="btn" id="new" data-t="new"></button>
   </div>
   <div class="daytabs" id="daytabs"></div>
   <div class="scroller" id="scroller"><div class="grid" id="grid"></div></div>
+  <div id="mlist" hidden style="padding:6px 18px 18px"></div>
 </section>
 
+<a class="card ad" href="/production-it/" style="border-color:#5e27d4">
+  <img src="/img/prodit-icon.png" alt="" style="width:48px;height:48px;border-radius:14px;flex:none"><p><b>Production IT</b> — <span data-t="adp"></span></p><span class="btn">Google Play</span></a>
 <a class="card ad" href="https://play.google.com/store/apps/details?id=online.magicbtn.player" target="_blank" rel="noopener">
-  <div class="play">▶</div><p><b>Smart AI Player</b> — <span data-t="ad"></span></p><span class="btn outline">Google Play</span></a>
+  <div class="play"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></div><p><b>Smart AI Player</b> — <span data-t="ad"></span></p><span class="btn outline">Google Play</span></a>
 </main>
 
 <div class="dim" id="dim"><div class="modal" role="dialog" aria-modal="true">
@@ -145,7 +150,7 @@ key:'Код доступа',enter:'Войти',today:'Сегодня',new:'+ В�
 guests:'Гости',guestsHint:'Удалить — ✕. Добавить — впишите адрес и нажмите Enter или запятую.',note:'Повестка',go:'Создать и разослать',cancel:'Отмена',
 ok:'Встреча создана',okLead:'Приглашения отправлены. Ссылка:',open:'Открыть встречу',copy:'Скопировать',copied:'Скопировано',close:'Закрыть',
 tz:'Часовой пояс: ',busy:'Отправляю…',errKey:'Неверный код доступа',errNet:'Нет связи с сервером',errLimit:'Лимит встреч на сегодня',errGuests:'Добавьте хотя бы одного гостя',backup:'Запасная ссылка (Zoom и т. п.), необязательно',failed:'Не доставлено: ',
-ad:'видеоплеер, чат и звонки на телефоне. Встречи — в один тап.',days:['Пн','Вт','Ср','Чт','Пт','Сб','Вс']},
+adp:'чат, видеозвонки и встречи команды в одном приложении. Встречи из этого календаря — в один тап.',ad:'видеоплеер, чат и звонки на телефоне. Встречи — в один тап.',days:['Пн','Вт','Ср','Чт','Пт','Сб','Вс']},
 en:{h1:'Production IT meetings',lead:'Click a free time — the meeting is created and guests get an email with the link and a calendar invitation. Click any meeting to change or cancel it.',
 editTitle:'Edit meeting',save:'Save and send',dropMeeting:'Cancel meeting',confirmDrop:'Cancel the meeting? Guests will be notified.',
 needKey:'You have already created or changed 5 meetings today — an access code is needed now.',needKeyHint:'Without a code — up to 5 meetings a day.',notYours:'Only the person who created this meeting can change it',
@@ -153,7 +158,7 @@ key:'Access code',enter:'Enter',today:'Today',new:'+ Meeting',newTitle:'New meet
 guests:'Guests',guestsHint:'Remove — ✕. Add — type an email and press Enter or comma.',note:'Agenda',go:'Create and send',cancel:'Cancel',
 ok:'Meeting created',okLead:'Invitations sent. Link:',open:'Open meeting',copy:'Copy',copied:'Copied',close:'Close',
 tz:'Time zone: ',busy:'Sending…',errKey:'Wrong access code',errNet:'Cannot reach the server',errLimit:'Daily limit reached',errGuests:'Add at least one guest',backup:'Backup link (Zoom etc.), optional',failed:'Not delivered: ',
-ad:'video player, chat and calls on your phone. Meetings in one tap.',days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun']},
+adp:'team chat, video calls and meetings in one app. Meetings from this calendar — in one tap.',ad:'video player, chat and calls on your phone. Meetings in one tap.',days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun']},
 sr:{h1:'Састанци Production IT',lead:'Кликните на слободно време — састанак се прави, а гости добијају имејл са линком и позивницом за календар. Кликните на било који састанак да га измените или откажете.',
 editTitle:'Измени састанак',save:'Сачувај и пошаљи',dropMeeting:'Откажи састанак',confirmDrop:'Отказати састанак? Гости ће добити обавештење.',
 needKey:'Данас сте већ направили или изменили 5 састанака — сада је потребан код за приступ.',needKeyHint:'Без кода — до 5 састанака дневно.',notYours:'Овај састанак може да измени само онај ко га је направио',
@@ -161,7 +166,7 @@ key:'Код за приступ',enter:'Уђи',today:'Данас',new:'+ Сас
 guests:'Гости',guestsHint:'Уклони — ✕. Додај — упишите адресу и притисните Enter или зарез.',note:'Дневни ред',go:'Направи и пошаљи',cancel:'Откажи',
 ok:'Састанак је направљен',okLead:'Позивнице су послате. Линк:',open:'Отвори састанак',copy:'Копирај',copied:'Копирано',close:'Затвори',
 tz:'Временска зона: ',busy:'Шаљем…',errKey:'Погрешан код за приступ',errNet:'Нема везе са сервером',errLimit:'Дневни лимит је достигнут',errGuests:'Додајте бар једног госта',backup:'Резервни линк (Zoom итд.), опционо',failed:'Није испоручено: ',
-ad:'видео плејер, чет и позиви на телефону. Састанци једним додиром.',days:['Пон','Уто','Сре','Чет','Пет','Суб','Нед']}};
+adp:'чет, видео позиви и састанци тима у једној апликацији. Састанци из овог календара — једним додиром.',ad:'видео плејер, чет и позиви на телефону. Састанци једним додиром.',days:['Пон','Уто','Сре','Чет','Пет','Суб','Нед']}};
 const $=id=>document.getElementById(id);
 const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 let CLIENT=localStorage.getItem('pit.client');   // этот браузер: свои встречи и лимит без кода
@@ -183,7 +188,40 @@ async function load(){
   items=j.items||[];ALL=!!j.all;draw();
  }catch(e){draw()}}
 
+// пространства компаний: домены почты участников (кроме публичных почтовых сервисов); вид: неделя или список всех встреч
+const PUB=['gmail.com','googlemail.com','yandex.ru','ya.ru','yandex.com','mail.ru','bk.ru','inbox.ru','list.ru','rambler.ru','outlook.com','hotmail.com','live.com','icloud.com','me.com','yahoo.com','proton.me','protonmail.com','gmx.com','gmx.de','aol.com','zoho.com','mail.com'];
+const UI={ru:{all:'Все пространства',week:'Неделя',list:'Все встречи',none:'Встреч нет',org:'Организатор'},
+ en:{all:'All spaces',week:'Week',list:'All meetings',none:'No meetings',org:'Organizer'},
+ sr:{all:'Svi prostori',week:'Nedelja',list:'Svi sastanci',none:'Nema sastanaka',org:'Organizator'}};
+let SPACE=localStorage.getItem('pit.space')||'',MODE=localStorage.getItem('pit.mode')||'week';
+{const q=new URLSearchParams(location.search);if(q.has('space'))SPACE=q.get('space').replace(/^@/,'').toLowerCase();if(q.get('view')==='list'||q.get('view')==='week')MODE=q.get('view')}   // ссылка на встречи компании: ?view=list&space=prod-it.com
+const ui=()=>UI[L]||UI.en;
+function spacesOf(it){const s=new Set();[it.organizer_email||''].concat(it.emails||[]).forEach(e=>{const d=(e.split('@')[1]||'').toLowerCase();if(d&&!PUB.includes(d))s.add(d)});return s}
+function shown(){return SPACE?items.filter(it=>spacesOf(it).has(SPACE)):items}
+function fillSpaces(){const cnt={};items.forEach(it=>spacesOf(it).forEach(d=>cnt[d]=(cnt[d]||0)+1));
+ const sel=$('space');sel.innerHTML='';sel.add(new Option(ui().all,''));
+ Object.keys(cnt).sort().forEach(d=>sel.add(new Option('@'+d+' ('+cnt[d]+')',d)));
+ if(SPACE&&!cnt[SPACE])SPACE='';sel.value=SPACE;$('mode').innerHTML=(MODE==='list'?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M3 6h18M3 18h18"/></svg>')+'<span style="margin-left:6px">'+(MODE==='list'?ui().week:ui().list)+'</span>'}
+function drawList(){const box=$('mlist'),now=new Date();box.innerHTML='';
+ const up=shown().filter(it=>new Date(it.start).getTime()+it.minutes*60000>=now.getTime()).sort((a,b)=>new Date(a.start)-new Date(b.start));
+ if(!up.length){box.innerHTML='<p style="color:var(--sub)">'+ui().none+'</p>';return}
+ const df=new Intl.DateTimeFormat(L,{weekday:'long',day:'numeric',month:'long'});let last='';
+ for(const it of up){const st=new Date(it.start),k=df.format(st);
+  if(k!==last){last=k;const h=document.createElement('div');h.textContent=k;h.style.cssText='margin:16px 0 6px;color:var(--sub);font-size:14px;text-transform:capitalize';box.appendChild(h)}
+  const row=document.createElement('div');row.style.cssText='display:flex;gap:14px;align-items:center;padding:12px 14px;border:1.5px solid var(--line);border-radius:16px;margin-bottom:8px;cursor:pointer;background:var(--card)';
+  const sp=[...spacesOf(it)];
+  row.innerHTML='<b style="min-width:52px;color:var(--ink)">'+pad(st.getHours())+':'+pad(st.getMinutes())+'</b><div style="flex:1;min-width:0"><div class="t" style="color:var(--ink);font-weight:500"></div><div class="o" style="font-size:13px;color:var(--sub)"></div></div>'
+   +(sp.length?'<span style="font-size:12px;border:1px solid var(--line);border-radius:40px;padding:3px 10px;color:var(--sub)">@'+sp[0]+'</span>':'');
+  row.querySelector('.t').textContent=it.title;row.querySelector('.o').textContent=ui().org+': '+(it.organizer||it.organizer_email||'');
+  row.onclick=()=>view(it);box.appendChild(row)}}
+$('space').onchange=e=>{SPACE=e.target.value;localStorage.setItem('pit.space',SPACE);draw()};
+$('mode').onclick=()=>{MODE=MODE==='list'?'week':'list';localStorage.setItem('pit.mode',MODE);draw()};
+
 function draw(){
+ fillSpaces();
+ const lst=MODE==='list';$('mlist').hidden=!lst;$('scroller').hidden=lst;$('daytabs').style.visibility=lst?'hidden':'';
+ ['prev','today','next','range'].forEach(id=>$(id).style.visibility=lst?'hidden':'');
+ if(lst){drawList();return}
  const g=$('grid'),now=new Date();g.innerHTML='';
  const end=new Date(week);end.setDate(end.getDate()+6);
  const fmt=new Intl.DateTimeFormat(L,{day:'numeric',month:'long'});
@@ -200,7 +238,7 @@ function draw(){
   const col=document.createElement('div');col.className='d-col'+(i===day?' on':'');col.style.position='relative';
   for(let h=H0;h<H1;h++)for(const m of [0,30]){const s=document.createElement('div');const t=new Date(d);t.setHours(h,m,0,0);
    s.className='slot'+(m===0?' top':'')+(t<now?' past':'');if(t>=now)s.onclick=()=>openNew(t);col.appendChild(s)}
-  for(const it of items){const st=new Date(it.start);if(iso(st)!==iso(d))continue;
+  for(const it of shown()){const st=new Date(it.start);if(iso(st)!==iso(d))continue;
    const top=((st.getHours()+st.getMinutes()/60)-H0)*PX;if(top<0||top>(H1-H0)*PX)continue;
    const e=document.createElement('div');e.className='ev';e.style.top=top+'px';e.style.height=Math.max(22,it.minutes/60*PX-2)+'px';
    e.innerHTML='<b></b>'+pad(st.getHours())+':'+pad(st.getMinutes());e.firstChild.textContent=it.title;e.onclick=ev=>{ev.stopPropagation();view(it)};col.appendChild(e)}
@@ -257,7 +295,7 @@ lang(L);
 load();
 </script><script>
 (function(){var b=document.getElementById('themeBtn');
-function set(t){document.documentElement.dataset.theme=t;localStorage.setItem('pit.theme',t);b.textContent=t==='dark'?'☀':'☾';}
+function set(t){document.documentElement.dataset.theme=t;localStorage.setItem('pit.theme',t);b.innerHTML=t==='dark'?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>';}
 set(document.documentElement.dataset.theme||'dark');b.onclick=function(){set(document.documentElement.dataset.theme==='dark'?'light':'dark');};})();
 </script>
 </body></html>

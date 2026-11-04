@@ -53,9 +53,14 @@ public class ProditHomeActivity extends Activity {
                 () -> startActivity(DmListActivity.open(this)));
         card(col, "👥", Prodit.t("team_chat"), Prodit.t("team_chat_sub"), true,
                 () -> startActivity(new Intent(this, ChatActivity.class)));
+        String dom = Prodit.domain(this);
+        card(col, "🏢", Prodit.t("team"), dom.isEmpty() ? Prodit.t("team_sub_none") : Prodit.t("team_sub", dom), false,
+                () -> startActivity(new Intent(this, ProditTeamActivity.class)));
         card(col, "📅", Prodit.t("meetings"), Prodit.t("meetings_sub"), true,
                 () -> startActivity(new Intent(this, ProditMeetingsActivity.class)));
         card(col, "✉", Prodit.t("new_chat"), Prodit.t("new_chat_sub"), false, this::newChat);
+        card(col, "📋", Prodit.t("backlog"), Prodit.t("backlog_sub"), false,
+                () -> startActivity(ChatActivity.room(this, "backlog", "📋 " + Prodit.t("backlog"))));
         card(col, "👤", Prodit.t("profile"), Prodit.email(this), false,
                 () -> startActivity(new Intent(this, ProfileActivity.class)));
 

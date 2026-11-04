@@ -117,7 +117,23 @@ export const LEVELS = [
   },
 ];
 
-export const levelById = (id) => LEVELS.find((l) => l.id === Number(id)) || LEVELS[0];
+/**
+ * Отдельный уровень «Замок» — вне цепочки прохождения (не открывает и не закрывает места):
+ * его выбирают на старте. Башня игрока здесь — замок, он растёт 1 → 4 при «Подрасти»
+ * (модели assets/castle/stage1..4.glb, генератор tools/castle_glb.py).
+ * Плиты расставлены вручную пошире: замок 4-й стадии ≈ 10 в ширину.
+ */
+export const CASTLE_LEVEL = {
+  id: 'castle', name: 'Замок', hint: 'Построй замок и расти его: башня → стена → мост → крепость!',
+  speech: 'Уровень Замок. Ставь башню на плиту и расти её!',
+  path: [[-40, -20], [-16, -20], [-16, -6], [16, -6], [16, 8], [-12, 8], [-12, 22], [40, 22]],
+  spotsList: [[-28, -11], [0, -13], [26, -14], [0, 1], [-26, 6], [28, 14], [6, 15]],
+  enemy: 'dancer', friends: ['castle'], shells: 140, target: 12, speed: 1,
+  sky: 0x9fd2e6, sea: 0x1d7aa0, land: 0x8fae6f,
+};
+
+export const levelById = (id) => (id === 'castle' ? CASTLE_LEVEL
+  : LEVELS.find((l) => l.id === Number(id)) || LEVELS[0]);
 
 /* ── прогресс в localStorage ── */
 

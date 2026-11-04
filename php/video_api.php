@@ -253,6 +253,10 @@ function social(): PDO
             $db->exec('ALTER TABLE chat ADD COLUMN share_file TEXT');
         } catch (PDOException $e) {
         }
+        try {   // 05.11.2026: комнаты общего чата (Production IT: чат компании, «Бэклог»); '' — прежний общий чат
+            $db->exec("ALTER TABLE chat ADD COLUMN room TEXT DEFAULT ''");
+        } catch (PDOException $e) {
+        }
         $db->exec('CREATE TABLE IF NOT EXISTS reports (kind TEXT, ref TEXT, uid TEXT, reason TEXT, ts INTEGER, PRIMARY KEY(kind, ref, uid))');
         // личные сообщения: отправитель — X-UID, получатель — его анонимный номер author_id
         $db->exec('CREATE TABLE IF NOT EXISTS dm (id INTEGER PRIMARY KEY, uid TEXT, src TEXT, dst TEXT, name TEXT, dst_name TEXT,
@@ -581,14 +585,31 @@ function action_delete(): void
 
 // ---------- общий чат ----------
 
+/** Комната общего чата из запроса: '' — общий чат; другие — только если их разрешает надстройка (chat_room_allowed). */
+function chat_room(): string
+{
+    $r = (string)($_GET['room'] ?? '');
+    if ($r === '') {
+        return '';
+    }
+    if (!preg_match('/^[a-z0-9:._-]{1,80}$/', $r) || !function_exists('chat_room_allowed')) {
+        fail(404, 'no such room');
+    }
+    if (!chat_room_allowed($r)) {
+        fail(403, 'room');
+    }
+    return $r;
+}
+
 function action_chat(): void
 {
     $since = max(0, (int)($_GET['since'] ?? 0));
     $uid = uid(false);
-    $q = social()->prepare("SELECT c.* FROM chat c WHERE c.id > ? AND
+    $room = chat_room();
+    $q = social()->prepare("SELECT c.* FROM chat c WHERE c.id > ? AND COALESCE(c.room, '') = ? AND
         (SELECT COUNT(*) FROM reports r WHERE r.kind = 'chat' AND r.ref = CAST(c.id AS TEXT)) < " . (int)HIDE_AFTER_REPORTS . "
         ORDER BY c.id DESC LIMIT 100");
-    $q->execute([$since]);
+    $q->execute([$since, $room]);
     $items = [];
     foreach (array_reverse($q->fetchAll(PDO::FETCH_ASSOC)) as $r) {
         $m = ['id' => (int)$r['id'], 'name' => $r['name'] !== '' ? $r['name'] : 'Guest', 'text' => $r['text'],
@@ -612,14 +633,15 @@ function action_chat(): void
 function action_chat_post(): void
 {
     $uid = uid(true);
-    $text = trim(mb_substr((string)($_GET['text'] ?? ''), 0, 500));
+    $room = chat_room();
+    $text = trim(mb_substr((string)($_GET['text'] ?? ''), 0, $room === '' ? 500 : 2000));
     $name = trim(mb_substr((string)($_GET['name'] ?? ''), 0, 40));
     $surl = trim((string)($_GET['share_url'] ?? ''));
     $sfile = trim((string)($_GET['share_file'] ?? ''));
     if ($text === '' && $surl === '') {
         fail(400, 'empty message');
     }
-    if (setting('chat_closed') === '1' && !key_ok()) {   // 3.9: админ закрыл общий чат
+    if ($room === '' && setting('chat_closed') === '1' && !key_ok()) {   // 3.9: админ закрыл общий чат
         fail(423, 'chat closed');
     }
     if (($surl !== '' && !preg_match('~^https://[^\s]+$~', $surl)) || ($sfile !== '' && !preg_match('~^https://[^\s]+$~', $sfile))) {
@@ -633,12 +655,20 @@ function action_chat_post(): void
     // номер сообщения — всегда больше любого прежнего и не ниже 2000: после очистки чата SQLite начал бы с 1,
     // а приложения помнят «видел до №…» и не заметили бы новые (02.11.2026)
     $id = max((int)social()->query('SELECT COALESCE(MAX(id), 0) FROM chat')->fetchColumn(), (int)setting('chat_last'), 2000) + 1;
-    social()->prepare('INSERT INTO chat (id, uid, name, text, ts, share_name, share_url, share_key, share_file) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+    social()->prepare('INSERT INTO chat (id, uid, name, text, ts, share_name, share_url, share_key, share_file, room) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)')
         ->execute([$id, $uid, $name, $text, time(), mb_substr((string)($_GET['share_name'] ?? ''), 0, 60), $surl,
-            mb_substr((string)($_GET['share_key'] ?? ''), 0, 64), mb_substr($sfile, 0, 500)]);
+            mb_substr((string)($_GET['share_key'] ?? ''), 0, 64), mb_substr($sfile, 0, 500), $room]);
     set_setting('chat_last', (string)$id);
     $pushText = $text !== '' ? $text : '🎬 ' . (string)($_GET['share_name'] ?? '');
     $author = author_id($uid);
+    if ($room !== '') {   // комната — push только её участникам (надстройка решает, кому)
+        if (function_exists('chat_room_push')) {
+            push_later(fn() => chat_room_push($room, $author, ['type' => 'room', 'room' => $room, 'name' => $name !== '' ? $name : 'Guest',
+                'text' => mb_substr($pushText, 0, 150), 'author' => $author]));
+        }
+        json_out(['ok' => true, 'id' => $id]);
+        return;
+    }
     push_later(fn() => push_topic(defined('PUSH_CHAT_TOPIC') ? PUSH_CHAT_TOPIC : 'chat', ['type' => 'chat', 'name' => $name !== '' ? $name : 'Guest',
         'text' => mb_substr($pushText, 0, 150), 'author' => $author]));
     json_out(['ok' => true, 'id' => $id]);
@@ -1998,7 +2028,7 @@ if ($isPost) {   // тело JSON → в $_GET, чтобы папка прове
     $act = $_GET['action'] ?? '';
     $body = $act === 'upload' ? $_POST : ($act === 'share_chunk' ? [] : (json_decode(file_get_contents('php://input') ?: '{}', true) ?: []));
     foreach (['folder', 'file', 'text', 'name', 'kind', 'ref', 'reason', 'share_name', 'share_url', 'share_key', 'share_file',
-                 'to', 'to_name', 'contact', 'lang', 'app', 'id', 'status', 'note', 'on', 'op', 'token', 'chat', 'hidden'] as $f) {
+                 'to', 'to_name', 'contact', 'lang', 'app', 'id', 'status', 'note', 'on', 'op', 'token', 'chat', 'hidden', 'room'] as $f) {
         if (isset($body[$f]) && is_string($body[$f])) {
             $_GET[$f] = $body[$f];
         }

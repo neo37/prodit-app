@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Хвосты — во что играем?</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* экран выбора на старте: две большие карточки с картинкой — понятно без чтения */
+  html { background: #061a2b; }
+  body { overflow: auto; }
+  #pick { position: relative; z-index: 2; min-height: 100%; display: grid; place-content: center;
+          justify-items: center; gap: 18px; padding: 24px 16px; text-align: center; }
+  #pick h1.title { font-size: clamp(34px, 7vw, 60px); }
+  .choices { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 18px;
+             width: min(900px, 94vw); }
+  .choice { position: relative; display: flex; flex-direction: column; text-decoration: none; color: var(--foam);
+            border-radius: 22px; overflow: hidden; background: #0c2c44d0; border: 3px solid var(--line);
+            box-shadow: var(--shadow); transition: transform .15s, border-color .15s; }
+  .choice:active { transform: scale(.97); }
+  .choice:hover { transform: translateY(-3px); border-color: #ffffff55; }
+  .choice.last { border-color: var(--mimosa); }
+  .choice img { display: block; width: 100%; aspect-ratio: 8 / 5; object-fit: cover; background: #8fd4e8; }
+  .choice .name { padding: 14px 16px 2px; font-size: clamp(24px, 5vw, 32px); font-weight: 800; }
+  .choice .about { padding: 0 16px 18px; font-size: 15px; color: #b8d2e0; }
+  @media (max-height: 520px) {   /* телефон боком */
+    #pick { gap: 10px; padding: 12px; }
+    #pick h1.title { font-size: 30px; }
+    .choice img { aspect-ratio: 16 / 7; }
+    .choice .name { padding-top: 8px; font-size: 24px; }
+    .choice .about { padding-bottom: 10px; }
+  }
+  .choice .badge { position: absolute; top: 10px; left: 10px; padding: 6px 12px; border-radius: 999px;
+                   background: var(--mimosa); color: #3a2a00; font-weight: 700; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="waves"></div>
+<main id="pick">
+  <h1 class="title">Во что играем?</h1>
+  <div class="choices">
+    <a class="choice" id="c-tails" data-choice="tails">
+      <img src="assets/preview-tails.jpg" alt="">
+      <span class="name">🎀 Набережная</span>
+      <span class="about" id="tails-about"></span>
+    </a>
+    <a class="choice" id="c-castle" data-choice="castle" href="play.html?level=castle">
+      <img src="assets/castle/preview.jpg" alt="">
+      <span class="name">🏰 Замок</span>
+      <span class="about">Построй башню и расти её — до настоящей крепости!</span>
+    </a>
+  </div>
+</main>
+<script type="module">
+import { levelById, progress } from './src/levels.js';
+const n = progress.unlocked > 0 ? progress.unlocked : 1;
+const tails = document.getElementById('c-tails');
+tails.href = `play.html?level=${n}`;
+document.getElementById('tails-about').textContent = `Подружки и тени. Место ${n}: ${levelById(n).name}`;
+// прошлый выбор — подсвечен (запоминает и сама игра при входе в уровень)
+let last = 'tails';
+try { last = localStorage.getItem('tails.choice') || 'tails'; } catch (e) { /* без памяти */ }
+const lastCard = document.getElementById(last === 'castle' ? 'c-castle' : 'c-tails');
+lastCard.classList.add('last');
+lastCard.insertAdjacentHTML('afterbegin', '<span class="badge">в прошлый раз</span>');
+for (const a of document.querySelectorAll('.choice')) {
+  a.addEventListener('click', () => { try { localStorage.setItem('tails.choice', a.dataset.choice); } catch (e) { /* */ } });
+}
+</script>
+</body>
+</html>

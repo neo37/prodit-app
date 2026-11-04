@@ -67,11 +67,19 @@ final class Prodit {
     /** Код принят: берём постоянный X-UID этого email (одинаковый на всех телефонах) и имя. */
     static void signedIn(Context c, JSONObject o) {
         c.getSharedPreferences("social", 0).edit().putString("uid", o.optString("uid")).apply();
-        prefs(c).edit().putString("email", o.optString("email")).apply();
+        prefs(c).edit().putString("email", o.optString("email")).putString("domain", o.optString("domain")).apply();
         String n = o.optString("name");
         if (!n.isEmpty()) Social.setName(c, n);
         Push.init(c.getApplicationContext());   // новый X-UID — токен устройства на сервер заново
         startRealtime(c.getApplicationContext());
+    }
+
+    static String domain(Context c) {
+        return prefs(c).getString("domain", "");
+    }
+
+    static void setDomain(Context c, String d) {
+        prefs(c).edit().putString("domain", d == null ? "" : d).apply();
     }
 
     static void signOut(Context c) {
@@ -136,6 +144,19 @@ final class Prodit {
         s("chats", "Чаты", "Chats", "Четови");
         s("team_chat", "Общий чат", "Team chat", "Заједнички чет");
         s("team_chat_sub", "Вся команда Production IT", "Everyone at Production IT", "Цео тим Production IT");
+        s("team", "Команда", "Team", "Тим");
+        s("team_sub", "Коллеги @%s и чат компании", "Colleagues @%s and company chat", "Колеге @%s и чет компаније");
+        s("team_sub_none", "Коллеги по рабочей почте", "Colleagues by work email", "Колеге по пословном email-у");
+        s("company_chat", "Чат компании", "Company chat", "Чет компаније");
+        s("no_company", "Вы вошли с личной почты — команды по домену нет. Войдите с рабочей почты, чтобы видеть коллег.",
+                "You signed in with a personal email — no team by domain. Sign in with your work email to see colleagues.",
+                "Пријављени сте личним email-ом — нема тима по домену. Пријавите се пословним email-ом.");
+        s("no_colleagues", "Пока никого с @%s — пригласите коллег через «Написать по email».",
+                "Nobody from @%s yet — invite colleagues via “Message by email”.", "Још нико са @%s — позовите колеге.");
+        s("backlog", "Бэклог", "Backlog", "Беклог");
+        s("backlog_sub", "Планы развития Production IT — обсуждаем", "Production IT roadmap — let’s discuss", "Планови развоја Production IT");
+        s("soon_meeting", "Встреча через %s мин", "Meeting in %s min", "Састанак за %s мин");
+        s("meet_with", "Встреча: %s", "Meeting: %s", "Састанак: %s");
         s("cal_list", "Список", "List", "Листа");
         s("cal_grid", "Календарь", "Calendar", "Календар");
         s("chats_sub", "Личная переписка и звонки", "Direct messages and calls", "Лична преписка и позиви");

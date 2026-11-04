@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Production IT — чат, видеозвонки и встречи команды</title>
+<meta name="description" content="Production IT — рабочее приложение команды: вход по почте без паролей, чаты один на один и общий чат, видеозвонки прямо в приложении, календарь встреч с приглашениями.">
+<meta property="og:title" content="Production IT — чат, звонки и встречи команды">
+<meta property="og:description" content="Вход по рабочей почте, чаты, видеозвонки в приложении и календарь встреч. Android и браузер.">
+<meta property="og:image" content="https://spacecode.business/img/prodit-feature.webp">
+<meta property="og:type" content="website">
+<link rel="icon" href="/img/prodit-icon.png">
+<style>
+@font-face{font-family:Gilroy;src:url(/meet/fonts/Gilroy-Regular.woff2) format('woff2');font-weight:400;font-display:swap}
+@font-face{font-family:Gilroy;src:url(/meet/fonts/Gilroy-Medium.woff2) format('woff2');font-weight:500 700;font-display:swap}
+@font-face{font-family:Tactic;src:url(/meet/fonts/TacticSansExtended-Bold.woff2) format('woff2');font-weight:700;font-display:swap}
+:root{--bg:#0b0a12;--bg2:#12111c;--card:#1a1928;--line:#2f2c4a;--ink:#f1f0f7;--text:#c7c5d9;--sub:#9c99b5;--acc:#5e27d4;--acc2:#8a4fd8;--pink:#e58fb0;--link:#b39bff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);font:400 17px/1.6 Gilroy,system-ui,sans-serif}
+a{color:var(--link)}
+.w{max-width:1140px;margin:auto;padding:0 22px}
+header{position:sticky;top:0;z-index:10;background:rgba(11,10,18,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+header .w{display:flex;align-items:center;gap:18px;height:66px}
+.logo{font:700 19px Tactic,Gilroy,sans-serif;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:10px;flex:1}
+.logo img{width:30px;height:30px;border-radius:8px}
+nav a{color:var(--text);text-decoration:none;font-weight:500;margin-left:18px;font-size:15px}
+nav a:hover{color:var(--ink)}
+.lang{display:flex;border:1px solid var(--line);border-radius:40px;padding:3px}
+.lang button{background:none;border:0;color:var(--sub);font:500 13px Gilroy;padding:5px 11px;border-radius:40px;cursor:pointer}
+.lang button.on{background:var(--acc);color:#fff}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:40px;background:var(--acc);color:#fff;text-decoration:none;font:600 16px Gilroy;border:1px solid var(--acc);transition:transform .15s,box-shadow .15s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 10px 30px rgba(94,39,212,.35)}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink)}
+.btn small{font-weight:400;opacity:.75}
+.hero{position:relative;overflow:hidden;padding:84px 0 60px}
+.hero:before{content:"";position:absolute;inset:-20% -10% auto auto;width:900px;height:700px;background:radial-gradient(closest-side,rgba(94,39,212,.45),transparent);pointer-events:none}
+.hero:after{content:"";position:absolute;left:-200px;bottom:-300px;width:700px;height:600px;background:radial-gradient(closest-side,rgba(229,143,176,.18),transparent);pointer-events:none}
+.hero .w{position:relative;display:grid;grid-template-columns:1.05fr .95fr;gap:40px;align-items:center}
+.kicker{display:inline-block;font:600 13px Gilroy;letter-spacing:.06em;text-transform:uppercase;color:var(--link);border:1px solid var(--line);border-radius:40px;padding:6px 14px;margin-bottom:18px}
+h1{font:600 58px/1.05 Gilroy;color:var(--ink);margin:0 0 18px;letter-spacing:-.01em}
+h1 .g{background:linear-gradient(110deg,#b39bff,#e58fb0);-webkit-background-clip:text;background-clip:text;color:transparent}
+.lead{font-size:20px;color:var(--text);margin:0 0 30px;max-width:560px}
+.cta{display:flex;gap:12px;flex-wrap:wrap}
+.note{font-size:14px;color:var(--sub);margin-top:16px}
+.phones{position:relative;height:560px}
+.phone{position:absolute;width:250px;border-radius:34px;padding:9px;background:#24223a;box-shadow:0 30px 80px rgba(0,0,0,.55),0 0 0 1px #3a3760}
+.phone img{display:block;width:100%;border-radius:26px}
+.p1{left:8%;top:40px;transform:rotate(-6deg)}
+.p2{left:38%;top:0;z-index:2}
+.p3{right:0;top:70px;transform:rotate(6deg)}
+section{padding:80px 0}
+h2{font:600 40px/1.15 Gilroy;color:var(--ink);margin:0 0 12px}
+.sub{color:var(--sub);font-size:18px;margin:0 0 40px;max-width:680px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:26px}
+.card .ic{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--acc),var(--acc2));margin-bottom:16px}
+.card h3{font:600 20px Gilroy;color:var(--ink);margin:0 0 8px}
+.card p{margin:0;font-size:16px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center}
+.shot{width:100%;max-width:330px;border-radius:30px;box-shadow:0 30px 70px rgba(0,0,0,.5),0 0 0 1px #3a3760;display:block;margin:auto}
+ul.ticks{list-style:none;padding:0;margin:20px 0 0}
+ul.ticks li{padding:9px 0 9px 34px;position:relative;border-bottom:1px solid var(--line)}
+ul.ticks li:before{content:"";position:absolute;left:0;top:10px;width:22px;height:22px;border-radius:50%;background:rgba(94,39,212,.25) url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23b39bff%27 stroke-width=%272.4%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3E%3Cpath d=%27M20 6 9 17l-5-5%27/%3E%3C/svg%3E") center/13px no-repeat}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:s}
+.step{background:var(--bg2);border:1px solid var(--line);border-radius:22px;padding:26px;position:relative}
+.step:before{counter-increment:s;content:"0" counter(s);font:700 15px Tactic,Gilroy;color:var(--link);display:block;margin-bottom:12px}
+.step h3{font:600 19px Gilroy;color:var(--ink);margin:0 0 6px}
+.band{background:linear-gradient(120deg,#2a1866,#5e27d4 55%,#a3528d);border-radius:30px;padding:46px;display:flex;gap:30px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.band h2{margin:0 0 8px}.band p{margin:0;color:#e9e4ff;max-width:620px}
+.band .btn{background:#fff;color:#2a1866;border-color:#fff}
+.band .btn.ghost{background:transparent;color:#fff;border-color:rgba(255,255,255,.6)}
+details{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 22px;margin-bottom:12px}
+summary{cursor:pointer;color:var(--ink);font-weight:600;font-size:18px}
+details p{margin:12px 0 0}
+footer{border-top:1px solid var(--line);padding:34px 0;color:var(--sub);font-size:14px}
+footer .w{display:flex;gap:20px;flex-wrap:wrap;justify-content:space-between}
+@media(max-width:900px){
+ .hero .w,.split{grid-template-columns:1fr}
+ h1{font-size:42px}
+ .phones{height:470px;max-width:520px;margin:auto}
+ .phone{width:200px}
+ .grid,.steps{grid-template-columns:1fr}
+ nav{display:none}
+ section{padding:56px 0}
+ h2{font-size:31px}
+}
+</style>
+</head>
+<body>
+<header><div class="w">
+  <a class="logo" href="#"><img src="/img/prodit-icon.png" alt="">Production IT</a>
+  <nav><a href="#features" data-t="n1"></a><a href="#meet" data-t="n2"></a><a href="#backlog" data-t="n4"></a><a href="#faq" data-t="n3"></a></nav>
+  <div class="lang"><button data-l="ru">RU</button><button data-l="en">EN</button></div>
+</div></header>
+
+<div class="hero"><div class="w">
+  <div>
+    <span class="kicker" data-t="kicker"></span>
+    <h1 data-t="h1"></h1>
+    <p class="lead" data-t="lead"></p>
+    <div class="cta">
+      <a class="btn" href="https://play.google.com/store/apps/details?id=com.prodit.meet"><span data-t="play"></span></a>
+      <a class="btn ghost" href="/production-it/app/" data-t="web"></a>
+      <a class="btn ghost" href="/production-it/download/ProductionIT-1.0.0-portable.exe" download data-t="win"></a>
+      <a class="btn ghost" href="/meet/" data-t="cal"></a>
+    </div>
+    <p class="note" data-t="note"></p>
+  </div>
+  <div class="phones">
+    <div class="phone p1"><img src="/img/prodit-chats.webp" alt=""></div>
+    <div class="phone p2"><img src="/img/prodit-home.webp" alt=""></div>
+    <div class="phone p3"><img src="/img/prodit-call.webp" alt=""></div>
+  </div>
+</div></div>
+
+<section id="features"><div class="w">
+  <h2 data-t="f_h"></h2>
+  <p class="sub" data-t="f_sub"></p>
+  <div class="grid">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div><h3 data-t="f1h"></h3><p data-t="f1p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg></div><h3 data-t="f2h"></h3><p data-t="f2p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3 data-t="f3h"></h3><p data-t="f3p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></div><h3 data-t="f4h"></h3><p data-t="f4p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div><h3 data-t="f5h"></h3><p data-t="f5p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></div><h3 data-t="f6h"></h3><p data-t="f6p"></p></div>
+  </div>
+</div></section>
+
+<section style="background:var(--bg2)"><div class="w split">
+  <img class="shot" src="/img/prodit-chat.webp" alt="" loading="lazy">
+  <div>
+    <h2 data-t="c_h"></h2>
+    <p class="sub" style="margin-bottom:0" data-t="c_p"></p>
+    <ul class="ticks"><li data-t="c1"></li><li data-t="c2"></li><li data-t="c3"></li><li data-t="c4"></li></ul>
+  </div>
+</div></section>
+
+<section id="meet"><div class="w split">
+  <div>
+    <h2 data-t="m_h"></h2>
+    <p class="sub" style="margin-bottom:0" data-t="m_p"></p>
+    <ul class="ticks"><li data-t="m1"></li><li data-t="m2"></li><li data-t="m3"></li><li data-t="m4"></li></ul>
+    <div class="cta" style="margin-top:26px"><a class="btn" href="/meet/" data-t="cal"></a></div>
+  </div>
+  <img class="shot" src="/img/prodit-meetings.webp" alt="" loading="lazy">
+</div></section>
+
+<section style="background:var(--bg2)"><div class="w">
+  <h2 data-t="s_h"></h2>
+  <p class="sub" data-t="s_sub"></p>
+  <div class="steps">
+    <div class="step"><h3 data-t="s1h"></h3><p data-t="s1p"></p></div>
+    <div class="step"><h3 data-t="s2h"></h3><p data-t="s2p"></p></div>
+    <div class="step"><h3 data-t="s3h"></h3><p data-t="s3p"></p></div>
+  </div>
+</div></section>
+
+<section><div class="w">
+  <div class="grid">
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div><h3 data-t="t1h"></h3><p data-t="t1p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg></div><h3 data-t="t2h"></h3><p data-t="t2p"></p></div>
+    <div class="card"><div class="ic"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></svg></div><h3 data-t="t3h"></h3><p data-t="t3p"></p></div>
+  </div>
+</div></section>
+
+<section id="backlog" style="padding-top:20px"><div class="w">
+  <h2 data-t="bl_h"></h2>
+  <p class="sub" data-t="bl_sub"></p>
+  <div id="bl" class="card" style="max-height:520px;overflow:auto;display:grid;gap:12px"><p class="note" data-t="bl_load"></p></div>
+</div></section>
+
+<section id="faq" style="padding-top:20px"><div class="w">
+  <h2 data-t="q_h" style="margin-bottom:24px"></h2>
+  <details><summary data-t="q1"></summary><p data-t="a1"></p></details>
+  <details><summary data-t="q2"></summary><p data-t="a2"></p></details>
+  <details><summary data-t="q3"></summary><p data-t="a3"></p></details>
+  <details><summary data-t="q4"></summary><p data-t="a4"></p></details>
+  <details><summary data-t="q5"></summary><p data-t="a5"></p></details>
+</div></section>
+
+<section style="padding-top:0"><div class="w">
+  <div class="band">
+    <div><h2 data-t="b_h"></h2><p data-t="b_p"></p></div>
+    <div class="cta"><a class="btn" href="https://play.google.com/store/apps/details?id=com.prodit.meet" data-t="play"></a>
+    <a class="btn ghost" href="/production-it/app/" data-t="web"></a></div>
+  </div>
+</div></section>
+
+<footer><div class="w">
+  <span>© 2026 SPACECODE DOO · Production IT · <a href="https://prod-it.com">prod-it.com</a></span>
+  <span><a href="https://spacecode.business/prodit/privacy.html" data-t="priv"></a> · <a href="/meet/" data-t="cal2"></a> · <a href="/production-it/app/" data-t="web2"></a> · <a href="/production-it/download/ProductionIT-1.0.0-win-x64.zip" download data-t="zip"></a> · <a href="/production-it/download/ProductionIT-1.0.0-win-x64.7z" download data-t="z7"></a> · <a href="mailto:hexneo36@gmail.com">hexneo36@gmail.com</a></span>
+</div></footer>
+
+<script>
+const T = {
+ ru: {
+  n1:"Возможности", n2:"Встречи", n3:"Вопросы", n4:"Бэклог",
+  bl_h:"Бэклог — что делаем дальше", bl_sub:"Живой чат «Бэклог» из приложения: планы развития Production IT. Обсудить и предложить своё можно прямо в приложении.", bl_load:"Загружаю…", bl_empty:"Пока пусто — скоро здесь появятся планы.",
+  kicker:"Android · браузер", h1:'Команда на связи —<br><span class="g">в одном приложении</span>',
+  lead:"Production IT — рабочее приложение для команды и клиентов: личные чаты и общий чат, видеозвонки прямо в приложении и календарь встреч. Вход по рабочей почте — без паролей.",
+  play:"Google Play", web:"Веб-версия", web2:"Веб-версия", win:"Для Windows", zip:"Windows (.zip)", z7:"Windows (.7z)", cal:"Открыть календарь встреч", cal2:"Календарь встреч",
+  note:"Бесплатно · без рекламы · русский, английский, сербский",
+  f_h:"Всё для работы команды", f_sub:"Переписка, звонки и встречи — в одном месте, на телефоне и в браузере.",
+  f1h:"Вход за 10 секунд", f1p:"Рабочий email и 6-значный код из письма. Один аккаунт на нескольких телефонах — переписка не теряется.",
+  f2h:"Чаты один на один", f2p:"Найдите коллегу по почте и пишите. Нет в приложении — приглашение одной кнопкой.",
+  f3h:"Общий чат команды", f3p:"Одно пространство для всей команды: новости, вопросы, быстрые договорённости.",
+  f4h:"Видеозвонки", f4p:"Звонок из чата в один тап, входящий — «Принять / Отклонить». Гости подключаются по ссылке из браузера.",
+  f5h:"Календарь встреч", f5p:"Список или неделя по часам, «Войти» в идущую встречу, создание встречи с рассылкой приглашений.",
+  f6h:"Мгновенно", f6p:"Сообщения и звонки доходят сразу, push — когда приложение закрыто.",
+  c_h:"Переписка без лишнего", c_p:"Всё, что нужно для рабочих разговоров, и ничего лишнего.",
+  c1:"Отметка «прочитано» и push о новых сообщениях", c2:"Звонок прямо из диалога — без ссылок и других приложений",
+  c3:"Удаление своих сообщений у обоих собеседников", c4:"Блокировка и жалобы — для спокойной работы",
+  m_h:"Встречи — и в браузере тоже", m_p:"Календарь Production IT работает на сайте: создайте встречу, укажите гостей — каждый получит приглашение с кнопкой «Присоединиться» и событием для календаря.",
+  m1:"Встреча открывается в браузере, ничего ставить не нужно", m2:"Камера, микрофон, демонстрация экрана, чат и запись",
+  m3:"Участники из приложения и из браузера — в одной комнате", m4:"Изменили время — гости получат обновлённое приглашение",
+  s_h:"Как начать", s_sub:"Три шага — и команда на связи.",
+  s1h:"Установите", s1p:"Production IT из Google Play на Android.", s2h:"Войдите по почте", s2p:"Введите рабочий email и код из письма.",
+  s3h:"Пригласите коллег", s3p:"Напишите по почте — если коллеги ещё нет, он получит приглашение.",
+  t1h:"Данные защищены", t1p:"Только шифрованные соединения (HTTPS/WSS). Удаление аккаунта и данных — по запросу.",
+  t2h:"Без рекламы", t2p:"Никакой рекламы и рекламных идентификаторов. Мы не продаём данные.",
+  t3h:"Три языка", t3p:"Русский, английский и сербский интерфейс.",
+  q_h:"Вопросы и ответы",
+  q1:"Нужен ли пароль?", a1:"Нет. Вход — по рабочей почте и одноразовому коду из письма. На другом телефоне — тот же аккаунт и та же переписка.",
+  q2:"Как пригласить гостя без приложения?", a2:"Во время звонка нажмите «Ссылка» и отправьте её — гость откроет встречу в браузере. Встречи из календаря тоже открываются в браузере.",
+  q3:"Сколько это стоит?", a3:"Приложение бесплатное и без рекламы.",
+  q4:"Где хранятся данные?", a4:"На наших серверах; соединения шифруются. Подробно — в политике конфиденциальности.",
+  q5:"Есть ли версия для iPhone?", a5:"Пока Android и браузер: встречи и календарь работают на любом устройстве через сайт.",
+  b_h:"Соберите команду в Production IT", b_p:"Чат, звонки и встречи — бесплатно и без рекламы.",
+  priv:"Политика конфиденциальности"
+ },
+ en: {
+  n1:"Features", n2:"Meetings", n3:"FAQ", n4:"Backlog",
+  bl_h:"Backlog — what’s next", bl_sub:"The live “Backlog” chat from the app: the Production IT roadmap. Discuss and suggest ideas right in the app.", bl_load:"Loading…", bl_empty:"Empty for now — the roadmap is coming soon.",
+  kicker:"Android · browser", h1:'Your team, connected —<br><span class="g">in one app</span>',
+  lead:"Production IT is the work app for teams and clients: direct and team chats, video calls inside the app and a meetings calendar. Sign in with your work email — no passwords.",
+  play:"Google Play", web:"Web app", web2:"Web app", win:"For Windows", zip:"Windows (.zip)", z7:"Windows (.7z)", cal:"Open the meetings calendar", cal2:"Meetings calendar",
+  note:"Free · no ads · English, Russian, Serbian",
+  f_h:"Everything your team needs", f_sub:"Messages, calls and meetings in one place — on the phone and in the browser.",
+  f1h:"Sign in in 10 seconds", f1p:"Work email and a 6-digit code. One account on several phones — your chats stay with you.",
+  f2h:"One-to-one chats", f2p:"Find a colleague by email and write. Not on the app yet — invite with one tap.",
+  f3h:"Team chat", f3p:"One space for the whole team: news, questions and quick decisions.",
+  f4h:"Video calls", f4p:"Call from a chat in one tap; incoming calls with Accept / Decline. Guests join from a browser link.",
+  f5h:"Meetings calendar", f5p:"List or week view, “Join” the meeting in progress, create meetings with email invitations.",
+  f6h:"Instant", f6p:"Messages and calls arrive right away, with push when the app is closed.",
+  c_h:"Messaging without clutter", c_p:"Everything you need for work conversations — and nothing else.",
+  c1:"Read receipts and push notifications", c2:"Call right from the conversation — no links or other apps",
+  c3:"Delete your messages for both sides", c4:"Block and report — for calm work",
+  m_h:"Meetings — in the browser too", m_p:"The Production IT calendar works on the web: create a meeting, add guests — each gets an invitation with a “Join” button and a calendar event.",
+  m1:"The meeting opens in a browser, nothing to install", m2:"Camera, microphone, screen sharing, chat and recording",
+  m3:"App and browser participants meet in the same room", m4:"Changed the time? Guests get an updated invitation",
+  s_h:"Get started", s_sub:"Three steps and your team is connected.",
+  s1h:"Install", s1p:"Production IT from Google Play on Android.", s2h:"Sign in with email", s2p:"Enter your work email and the code from the message.",
+  s3h:"Invite colleagues", s3p:"Write by email — if a colleague isn’t on the app yet, they get an invitation.",
+  t1h:"Data protected", t1p:"Encrypted connections only (HTTPS/WSS). Account and data deletion on request.",
+  t2h:"No ads", t2p:"No ads and no advertising IDs. We don’t sell data.",
+  t3h:"Three languages", t3p:"English, Russian and Serbian interface.",
+  q_h:"FAQ",
+  q1:"Do I need a password?", a1:"No. You sign in with your work email and a one-time code. On another phone — same account and same chats.",
+  q2:"How do I invite a guest without the app?", a2:"During a call tap “Link” and send it — the guest opens the meeting in a browser. Calendar meetings open in a browser too.",
+  q3:"How much does it cost?", a3:"The app is free and has no ads.",
+  q4:"Where is data stored?", a4:"On our servers; connections are encrypted. Details are in the privacy policy.",
+  q5:"Is there an iPhone version?", a5:"For now Android and the browser: meetings and the calendar work on any device on the web.",
+  b_h:"Bring your team to Production IT", b_p:"Chat, calls and meetings — free and without ads.",
+  priv:"Privacy policy"
+ }
+};
+function setLang(l) {
+  document.documentElement.lang = l;
+  document.querySelectorAll('[data-t]').forEach(e => { const v = T[l][e.dataset.t]; if (v !== undefined) e.innerHTML = v; });
+  document.querySelectorAll('.lang button').forEach(b => b.classList.toggle('on', b.dataset.l === l));
+  try { localStorage.setItem('pit.lang', l); } catch (e) {}
+}
+document.querySelectorAll('.lang button').forEach(b => b.onclick = () => setLang(b.dataset.l));
+let l0 = 'ru';
+try { l0 = localStorage.getItem('pit.lang') || ((navigator.language || 'ru').startsWith('ru') || (navigator.language || '').startsWith('sr') ? 'ru' : 'en'); } catch (e) {}
+setLang(T[l0] ? l0 : 'ru');
+// «Бэклог» — сообщения чата из приложения (только чтение)
+(async function () {
+  const box = document.getElementById('bl');
+  const esc = t => t.replace(/[&<>]/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;'}[c]));
+  try {
+    const d = await (await fetch('/prodit/video_api.php?action=prodit_backlog')).json();
+    const items = (d.items || []).slice().reverse();
+    if (!items.length) { box.innerHTML = '<p class="note">' + T[document.documentElement.lang].bl_empty + '</p>'; return; }
+    box.innerHTML = items.map(m => '<div style="border-bottom:1px solid var(--line);padding-bottom:12px"><div style="font-size:13px;color:var(--sub)">'
+      + esc(m.name) + ' · ' + new Date(m.ts).toLocaleDateString() + '</div><div style="white-space:pre-wrap;color:var(--ink)">' + esc(m.text) + '</div></div>').join('');
+  } catch (e) { box.innerHTML = '<p class="note">—</p>'; }
+})();
+</script>
+</body>
+</html>

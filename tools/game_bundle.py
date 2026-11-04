@@ -11,7 +11,11 @@ SRC = Path(sys.argv[1] if len(sys.argv) > 1 else Path.home() / "infra/alisa").re
 DST = Path(__file__).resolve().parents[1] / "assets" / "game"
 STATIC = ["index.html", "play.html", "style.css", "play.css", "assets/favicon.svg", "assets/map_new.jpg",
           "assets/height_map_new.jpg", "models/maskot.web.glb", "models/tiny-dancer.opt.glb",
-          "viewer/own.html", "viewer/viewer.css"]
+          "viewer/own.html", "viewer/viewer.css",
+          # уровень «Замок» и экран выбора на старте
+          "start.html", "assets/preview-tails.jpg", "assets/castle/preview.jpg",
+          "assets/castle/stage1.glb", "assets/castle/stage2.glb", "assets/castle/stage3.glb",
+          "assets/castle/stage4.glb"]
 ENTRY = ["src/kid-td.js", "src/levels.js", "src/lore.js", "viewer/own.js", "viewer/scene.js"]
 IMP = re.compile(r"""(?:import|export)\s[^'"]*?from\s*['"]([^'"]+)['"]|import\s*['"]([^'"]+)['"]""")
 
@@ -44,10 +48,10 @@ def main():
         out.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(f, out)
         total += f.stat().st_size
-    # с главного экрана приложения — сразу в последний открытый уровень
+    # с главного экрана приложения (GameActivity открывает continue.html) — экран выбора:
+    # «Набережная» (последнее открытое место, tails.unlocked) или «Замок»; прошлый выбор подсвечен
     (DST / "continue.html").write_text('<!doctype html><meta charset="utf-8"><script>'
-        'var n=Number(localStorage.getItem("tails.unlocked")||1);location.replace("play.html?level="+(n>0?n:1));'
-        '</script>', encoding="utf-8")
+        'location.replace("start.html");</script>', encoding="utf-8")
     # в приложении не нужны ссылка на версию td/ и подсказка про локальный сервер
     idx = DST / "index.html"
     idx.write_text(idx.read_text(encoding="utf-8").replace("</head>",

@@ -118,7 +118,7 @@ def main():
     open(f'{tmp}/www/site/prodit_ext.php', 'w', encoding='utf-8').write(open(os.path.join(PHP, 'prodit_ext.php'), encoding='utf-8').read())
     name = f'prodit-test-{os.getpid()}'
     env = ['-e', 'SMTP_HOST=host.docker.internal', '-e', f'SMTP_PORT={SMTP_PORT}', '-e', 'SMTP_USER=edu@test.local', '-e', 'SMTP_PASS=x',
-           '-e', 'SMTP_TLS=0', '-e', 'MEET_KEY=mk', '-e', 'RT_SECRET=rtsecret', '-e', 'PRODIT_CODE_GAP=3', '-e', 'REVIEW_EMAIL=review@prod-it.com', '-e', 'REVIEW_CODE=135790']
+           '-e', 'SMTP_TLS=0', '-e', 'MEET_KEY=mk', '-e', 'RT_SECRET=rtsecret', '-e', 'PRODIT_CODE_GAP=3', '-e', 'REVIEW_EMAIL=review@prod-it.com', '-e', 'REVIEW_CODE=135790', '-e', 'RT_API_KEY=rk']
     subprocess.run(['docker', 'run', '-d', '--rm', '--name', name, '--add-host', 'host.docker.internal:host-gateway', *env,
                     '-p', f'127.0.0.1:{PORT}:8080', '-v', f'{tmp}:/srv', 'php:8.3-cli', 'php', '-S', '0.0.0.0:8080', '-t', '/srv/www/site'],
                    check=True, stdout=subprocess.DEVNULL)
@@ -198,6 +198,32 @@ def main():
         check('сообщение в общий чат', s == 200 and o.get('ok'))
         s, o = call('chat', uid=UB)
         check('виден другому участнику', s == 200 and any(m.get('text') == 'всем привет' for m in o.get('items', [])))
+
+        print('компании, комнаты, бэклог')
+        time.sleep(3.5)
+        s, _, (s2, x1) = login('ivan@acme.io', 'Иван', 'device00000061')
+        time.sleep(3.5)
+        s, _, (s2, x2) = login('olga@acme.io', 'Ольга', 'device00000062')
+        check('домен компании при входе', x1.get('domain') == 'acme.io')
+        s, o = call('prodit_company', uid=x1['uid'])
+        check('коллеги по домену', s == 200 and [m['name'] for m in o.get('members', [])] == ['Ольга'] and o.get('room') == 'co:acme.io')
+        s, o = call('prodit_company', uid=UB)
+        check('gmail/example — без компании?', s == 200 and o.get('domain') == 'example.com')
+        s, o = call('chat_post', {'text': 'привет, acme', 'name': 'Иван', 'room': 'co:acme.io'}, uid=x1['uid'])
+        check('сообщение в чат компании', s == 200 and o.get('ok'))
+        s, o = call('chat', uid=x2['uid'], qs='&room=co:acme.io')
+        check('коллега видит', any(m.get('text') == 'привет, acme' for m in o.get('items', [])))
+        check('чужой домен не видит', call('chat', uid=UA, qs='&room=co:acme.io')[0] == 403)
+        s, o = call('chat', uid=UA)
+        check('в общем чате сообщения компании нет', not any(m.get('text') == 'привет, acme' for m in o.get('items', [])))
+        check('несуществующая комната', call('chat', uid=UA, qs='&room=zzz')[0] == 403)
+        s, o = call('chat_post', {'text': '1.2: служба звонка в фоне', 'name': 'Production IT', 'room': 'backlog'}, uid=UA)
+        check('пост в бэклог', s == 200 and o.get('ok'))
+        s, o = call('prodit_backlog', uid='nobody000001')
+        check('бэклог читается без входа', s == 200 and any('служба' in m['text'] for m in o.get('items', [])) and 'email' not in json.dumps(o))
+        s, o = call('prodit_meet_create', {'title': 'Синк', 'start': '2026-11-06T10:00', 'with': x2['author']}, uid=x1['uid'])
+        check('встреча с собеседником', s == 200 and 'olga@acme.io' in created[-1]['emails'])
+        check('напоминания — только с ключом', call('prodit_remind', {}, uid='x00000001')[0] == 401)
 
         print('встречи и Centrifugo')
         s, o = call('prodit_meetings', uid=UA)

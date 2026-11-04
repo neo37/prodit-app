@@ -263,44 +263,51 @@ public class ProditMeetingsActivity extends Activity {
 
     /** Новая встреча: тема, дата, время, длительность, гости, комментарий → prodit_meet_create. */
     private void create() {
-        int p = Ui.dp(this, 20);
-        LinearLayout box = new LinearLayout(this);
+        createDialog(this, null, null, this::load);
+    }
+
+    /** Новая встреча: тема, дата, время, длительность, гости, комментарий → prodit_meet_create.
+     *  withAuthor — собеседник из личного диалога (его почту сервер подставит сам). */
+    static void createDialog(final Activity a, final String withAuthor, final String withName, final Runnable onDone) {
+        int p = Ui.dp(a, 20);
+        LinearLayout box = new LinearLayout(a);
         box.setOrientation(LinearLayout.VERTICAL);
-        box.setPadding(p, Ui.dp(this, 8), p, 0);
-        final EditText title = edit(box, Prodit.t("title"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        box.setPadding(p, Ui.dp(a, 8), p, 0);
+        final EditText title = edit(a, box, Prodit.t("title"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        if (withName != null) title.setText(Prodit.t("meet_with", withName));
         final Calendar when = Calendar.getInstance();
         when.add(Calendar.HOUR_OF_DAY, 1);
         when.set(Calendar.MINUTE, 0);
-        final TextView date = pick(box), time = pick(box);
+        final TextView date = pick(a, box), time = pick(a, box);
         final Runnable upd = () -> {
             date.setText(Prodit.t("date") + ": " + new SimpleDateFormat("d MMMM yyyy", new Locale(Prodit.lang())).format(when.getTime()));
             time.setText(Prodit.t("time") + ": " + new SimpleDateFormat("HH:mm", Locale.ROOT).format(when.getTime()));
         };
         upd.run();
-        date.setOnClickListener(v -> new DatePickerDialog(this, (dp, y, mo, d) -> {
+        date.setOnClickListener(v -> new DatePickerDialog(a, (dp, y, mo, d) -> {
             when.set(y, mo, d);
             upd.run();
         }, when.get(Calendar.YEAR), when.get(Calendar.MONTH), when.get(Calendar.DAY_OF_MONTH)).show());
-        time.setOnClickListener(v -> new TimePickerDialog(this, (tp, h, mi) -> {
+        time.setOnClickListener(v -> new TimePickerDialog(a, (tp, h, mi) -> {
             when.set(Calendar.HOUR_OF_DAY, h);
             when.set(Calendar.MINUTE, mi);
             upd.run();
         }, when.get(Calendar.HOUR_OF_DAY), when.get(Calendar.MINUTE), true).show());
-        final EditText minutes = edit(box, Prodit.t("minutes"), InputType.TYPE_CLASS_NUMBER);
+        final EditText minutes = edit(a, box, Prodit.t("minutes"), InputType.TYPE_CLASS_NUMBER);
         minutes.setText("60");
-        final EditText guests = edit(box, Prodit.t("guests"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
+        final EditText guests = edit(a, box, Prodit.t("guests"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
         guests.setSingleLine(false);
-        final EditText note = edit(box, Prodit.t("note"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        ScrollView sv = new ScrollView(this);
+        final EditText note = edit(a, box, Prodit.t("note"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        ScrollView sv = new ScrollView(a);
         sv.addView(box);
-        AlertDialog dlg = new AlertDialog.Builder(this).setTitle(Prodit.t("new_meeting")).setView(sv)
+        AlertDialog dlg = new AlertDialog.Builder(a).setTitle(Prodit.t("new_meeting")).setView(sv)
                 .setPositiveButton(Prodit.t("create"), null).setNegativeButton(Prodit.t("cancel"), null).create();
         dlg.setOnShowListener(d -> dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             JSONArray em = new JSONArray();
             for (String s : guests.getText().toString().split("[,;\\s]+"))
                 if (s.contains("@")) em.put(s.trim().toLowerCase(Locale.ROOT));
-            if (title.getText().toString().trim().isEmpty() || em.length() == 0) {
-                Toast.makeText(this, Prodit.t("need_title"), Toast.LENGTH_LONG).show();
+            if (title.getText().toString().trim().isEmpty() || (em.length() == 0 && withAuthor == null)) {
+                Toast.makeText(a, Prodit.t("need_title"), Toast.LENGTH_LONG).show();
                 return;
             }
             v.setEnabled(false);
@@ -310,11 +317,11 @@ public class ProditMeetingsActivity extends Activity {
                 try {
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ROOT);
                     iso.setTimeZone(TimeZone.getDefault());
-                    Prodit.api(this, "action=prodit_meet_create", "POST", new JSONObject()
+                    Prodit.api(a, "action=prodit_meet_create", "POST", new JSONObject()
                             .put("title", title.getText().toString().trim()).put("start", iso.format(when.getTime()))
                             .put("tz", TimeZone.getDefault().getID())
                             .put("duration", Math.max(15, parseInt(minutes.getText().toString(), 60)))
-                            .put("emails", em).put("note", note.getText().toString().trim()).put("lang", Prodit.lang()));
+                            .put("emails", em).put("with", withAuthor == null ? "" : withAuthor).put("note", note.getText().toString().trim()).put("lang", Prodit.lang()));
                     msg = Prodit.t("created");
                     ok = true;
                 } catch (Exception e) {
@@ -322,12 +329,12 @@ public class ProditMeetingsActivity extends Activity {
                 }
                 final String m = msg;
                 final boolean done = ok;
-                main.post(() -> {
-                    Toast.makeText(this, m, Toast.LENGTH_LONG).show();
+                a.runOnUiThread(() -> {
+                    Toast.makeText(a, m, Toast.LENGTH_LONG).show();
                     v.setEnabled(true);
                     if (done) {
                         dlg.dismiss();
-                        load();
+                        if (onDone != null) onDone.run();
                     }
                 });
             }).start();
@@ -343,23 +350,23 @@ public class ProditMeetingsActivity extends Activity {
         }
     }
 
-    private EditText edit(LinearLayout box, String hint, int type) {
-        TextView l = new TextView(this);
+    private static EditText edit(Activity a, LinearLayout box, String hint, int type) {
+        TextView l = new TextView(a);
         l.setText(hint);
         l.setTextSize(12);
-        l.setPadding(0, Ui.dp(this, 10), 0, 0);
+        l.setPadding(0, Ui.dp(a, 10), 0, 0);
         box.addView(l);
-        EditText e = new EditText(this);
+        EditText e = new EditText(a);
         e.setInputType(type);
         e.setSingleLine((type & InputType.TYPE_TEXT_FLAG_MULTI_LINE) == 0);
         box.addView(e, new LinearLayout.LayoutParams(-1, -2));
         return e;
     }
 
-    private TextView pick(LinearLayout box) {
-        TextView t = new TextView(this);
+    private static TextView pick(Activity a, LinearLayout box) {
+        TextView t = new TextView(a);
         t.setTextSize(16);
-        t.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 6));
+        t.setPadding(0, Ui.dp(a, 14), 0, Ui.dp(a, 6));
         box.addView(t);
         return t;
     }

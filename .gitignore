@@ -21,3 +21,7 @@ google-services.json*
 meet/web/fonts/
 meet/.meet_key
 meet/.visit.env
+node_modules/
+web/production-it/download/
+*.exe
+*.7z

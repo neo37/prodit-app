@@ -193,6 +193,42 @@ final class Notify {
     }
 
     /** Пуш «новое в общем чате»: одно уведомление, число растёт, пока чат не открыли. */
+    /** Production IT: сообщение в комнате (чат компании). Нажатие — открыть эту комнату. */
+    static void room(Context c, String room, String name, String text, String author) {
+        if (room == null || !enabled(c) || !allowed(c)) return;
+        if (author != null && (author.equals(Social.author(c)) || Block.blocked(c, author))) return;
+        channels(c);
+        String title = room.startsWith("co:") ? "🏢 " + room.substring(3) : "📋 Бэклог";
+        Intent open = ChatActivity.room(c, room, title).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        String body = (name == null || name.isEmpty() ? "Guest" : name) + ": " + (text == null ? "" : text);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, CH_CHAT) : new Notification.Builder(c);
+        b.setSmallIcon(R.drawable.ic_notify).setContentTitle(title).setContentText(body)
+                .setStyle(new Notification.BigTextStyle().bigText(body)).setAutoCancel(true)
+                .setCategory(Notification.CATEGORY_MESSAGE)
+                .setContentIntent(PendingIntent.getActivity(c, room.hashCode(), open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        try {
+            nm(c).notify("room:" + room, 1, b.build());
+        } catch (SecurityException ignored) {
+        }
+    }
+
+    /** Production IT: «Встреча через N минут». Нажатие — сразу в комнату встречи. */
+    static void meeting(Context c, String title, String room, String minutes) {
+        if (room == null || !allowed(c)) return;
+        channels(c);
+        Intent open = new Intent().setClassName(c, "online.magicbtn.player.LkCallActivity").putExtra("room", room)
+                .putExtra("title", title == null ? "" : title).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        String head = "⏰ " + Prodit.t("soon_meeting", minutes == null ? "10" : minutes);
+        Notification.Builder b = Build.VERSION.SDK_INT >= 26 ? new Notification.Builder(c, CH_CHAT) : new Notification.Builder(c);
+        b.setSmallIcon(R.drawable.ic_notify).setContentTitle(head).setContentText(title == null ? "" : title)
+                .setAutoCancel(true).setCategory(Notification.CATEGORY_EVENT)
+                .setContentIntent(PendingIntent.getActivity(c, room.hashCode(), open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        try {
+            nm(c).notify("meet:" + room, 1, b.build());
+        } catch (SecurityException ignored) {
+        }
+    }
+
     static void chat(Context c, String name, String text, String author) {
         if (!enabled(c) || !allowed(c) || ChatActivity.generalOpen) return;
         if (author != null && (author.equals(Social.author(c)) || Block.blocked(c, author))) return;

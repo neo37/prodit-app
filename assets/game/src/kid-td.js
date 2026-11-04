@@ -27,6 +27,8 @@ const MODELS = {
              dance: 'All_Night_Dance', attack: 'Fast_Lightning' },
     idleSpeed: 0.7,
   },
+  // уровень «Замок»: не персонаж, а 4 стадии роста одной башни (tools/castle_glb.py)
+  castle: { stages: [1, 2, 3, 4].map((n) => `assets/castle/stage${n}.glb`) },
 };
 
 const FRIENDS = {
@@ -35,6 +37,7 @@ const FRIENDS = {
   niksha: { name: 'Никша',  emoji: '🌊', model: 'dancer', tint: 0x8fd0ff, cost: 60,  range: 10, damage: 20, rate: 1.2, splash: 3 },
   iva:    { name: 'Ива',    emoji: '🔔', model: 'dancer', tint: 0xc7b0ff, cost: 80,  range: 18, damage: 34, rate: 1.8 },
   maskot: { name: 'Маскот', emoji: '⚡', model: 'maskot', tint: 0xffffff, cost: 110, range: 15, damage: 46, rate: 1.1 },
+  castle: { name: 'Замок',  emoji: '🏰', model: 'castle', tint: 0xffd447, cost: 50,  range: 16, damage: 14, rate: 0.8 },
 };
 
 /* ─────────────────── волны ─────────────────── */
@@ -55,6 +58,9 @@ const level = levelById(new URLSearchParams(location.search).get('level') || 1);
 const PATH = level.path.map(([x, z]) => new THREE.Vector3(x, 0, z));
 const SPOTS = (level.spotsList || makeSpots(level.path, level.spots || 12)).map(([x, z]) => new THREE.Vector3(x, 0, z));
 const FRIEND_IDS = level.friends;
+// что выбрано в прошлый раз — его подсвечивает экран выбора (start.html)
+try { localStorage.setItem('tails.choice', level.id === 'castle' ? 'castle' : 'tails'); } catch (e) { /* без памяти */ }
+if (level.id === 'castle') $('load-text').textContent = 'Носим камни для замка…';
 
 /* ─────────────────── сцена ─────────────────── */
 
@@ -140,7 +146,8 @@ scene.add(gate);
 for (let i = 0; i < 40; i++) {
   const ang = Math.random() * Math.PI * 2, r = rnd(10, 45);
   const p = new THREE.Vector3(Math.cos(ang) * r, 0, Math.sin(ang) * r);
-  if (PATH.some((w) => w.distanceTo(p) < 8) || SPOTS.some((s) => s.distanceTo(p) < 6)) continue;
+  const clear = level.id === 'castle' ? 9 : 6;   // замок шире подружки — деревья подальше от плит
+  if (PATH.some((w) => w.distanceTo(p) < 8) || SPOTS.some((s) => s.distanceTo(p) < clear)) continue;
   const t = new THREE.Group();
   if (Math.random() < 0.55) {
     const c = new THREE.Mesh(new THREE.ConeGeometry(rnd(1, 1.7), rnd(5.5, 9), 7),
@@ -246,11 +253,224 @@ class Actor {
   }
 }
 
+/* ─────────── замок: башня, которая растёт 1 → 4 ─────────── */
+
+const castleStages = [];  // кэш загруженных стадий: [stage1.scene … stage4.scene], клонируются на каждую плиту
+const easeOutBack = (t) => 1 + 2.2 * (t - 1) ** 3 + 1.2 * (t - 1) ** 2;
+
+class CastleActor {
+  constructor() {
+    this.root = new THREE.Group();
+    this.def = { idleSpeed: 1, clips: {} };
+    this.stage = 0;
+    this.model = null;
+    this.old = [];          // уходящие стадии (сжимаются в землю)
+    this.grow = 1;
+    this.yaw = 0;           // куда смотрит прицел-баллиста
+    this.aimYaw = 0;
+    this.setStage(1);
+  }
+
+  /** Показать стадию n (1..4; выше 4 — остаётся 4-я, только «подпрыгивает»). */
+  setStage(n) {
+    n = Math.max(1, Math.min(castleStages.length, n));
+    if (n === this.stage) { this.grow = 0.55; return; }
+    if (this.model) this.old.push({ obj: this.model, t: 0 });
+    this.stage = n;
+    this.model = castleStages[n - 1].clone();
+    this.model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    this.ballista = this.model.getObjectByName('ballista');
+    if (this.ballista) this.ballista.rotation.y = this.yaw;
+    this.root.add(this.model);
+    this.grow = 0;
+    this.update(0);
+  }
+
+  play() {}                 // анимаций-клипов у замка нет
+  setSpeed() {}
+
+  aim(target) {
+    const b = this.ballista;
+    if (!b) return;
+    b.getWorldPosition(this._p || (this._p = new THREE.Vector3()));
+    this.aimYaw = Math.atan2(target.x - this._p.x, target.z - this._p.z);
+  }
+
+  /** Откуда вылетает снаряд: из колеса баллисты. */
+  muzzle(out) {
+    if (this.ballista) return this.ballista.getWorldPosition(out).setY(out.y + 1.35);
+    return out.copy(this.root.position).setY(4);
+  }
+
+  update(dt) {
+    if (this.grow < 1) {    // рост: из земли вверх с перехлёстом
+      this.grow = Math.min(1, this.grow + dt / 0.7);
+      const k = easeOutBack(this.grow);
+      this.model.scale.set(0.85 + 0.15 * k, Math.max(0.02, k), 0.85 + 0.15 * k);
+    }
+    for (let i = this.old.length - 1; i >= 0; i--) {
+      const o = this.old[i];
+      o.t += dt / 0.35;
+      o.obj.scale.set(1 + 0.05 * o.t, Math.max(0.01, 1 - o.t), 1 + 0.05 * o.t);
+      if (o.t >= 1) { this.root.remove(o.obj); this.old.splice(i, 1); }
+    }
+    if (this.ballista) {    // плавный поворот прицела
+      let d = this.aimYaw - this.yaw;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      this.yaw += d * Math.min(1, dt * 8);
+      this.ballista.rotation.y = this.yaw;
+    }
+  }
+}
+
+/* ─────────── привидения: часть теней в волне (весёлые, не страшные) ─────────── */
+
+// доля привидений среди теней волны, на всех уровнях (?ghosts=0..1 — для проверок)
+const GHOST_CHANCE = Number(new URLSearchParams(location.search).get('ghosts') ?? 0.25);
+
+/** Общая геометрия привидения строится один раз: капля-тело с хвостиком, глазки, щёчки, ротик «о», ручки. */
+const ghostKit = (() => {
+  // профиль капли: круглая голова сверху, книзу сужается в хвостик
+  const prof = [];
+  for (let i = 0; i <= 16; i++) {
+    const t = i / 16;                                   // 0 — кончик хвоста, 1 — макушка
+    const y = t * 4.6;
+    const r = t > 0.62 ? Math.sqrt(Math.max(0, 1 - ((t - 0.62) / 0.38) ** 2)) * 1.55
+                       : 1.55 * Math.pow(t / 0.62, 0.7) * (0.25 + 0.75 * t / 0.62) + 0.02;
+    prof.push(new THREE.Vector2(Math.max(0.001, r), y));
+  }
+  const body = new THREE.LatheGeometry(prof, 20);
+  // хвостик загибается назад и чуть вбок, низ тела — волнистый
+  const p = body.attributes.position;
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    const low = Math.max(0, 1 - y / 2.2);               // 1 у кончика, 0 выше середины
+    const a = Math.atan2(z, x);
+    p.setXYZ(i, x + low * low * 1.0, y + Math.sin(a * 5) * 0.12 * low, z - low * low * 1.6);
+  }
+  body.computeVertexNormals();
+  const eye = new THREE.SphereGeometry(0.3, 12, 10);
+  const shine = new THREE.SphereGeometry(0.09, 8, 6);
+  const cheek = new THREE.CircleGeometry(0.22, 14);
+  const mouth = new THREE.TorusGeometry(0.15, 0.06, 6, 14);
+  const arm = new THREE.SphereGeometry(0.42, 10, 8);
+  const blob = new THREE.CircleGeometry(1.5, 20);
+  const dark = new THREE.MeshBasicMaterial({ color: 0x2b2c4a });
+  const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const blush = new THREE.MeshBasicMaterial({ color: 0xffa3c0, transparent: true, opacity: 0.8 });
+  return { body, eye, shine, cheek, mouth, arm, blob, dark, white, blush };
+})();
+
+class GhostActor {
+  constructor(scale = 1) {
+    const k = ghostKit;
+    this.root = new THREE.Group();
+    this.def = { idleSpeed: 1, clips: {} };
+    this.model = new THREE.Group();
+    this.model.scale.setScalar(scale);
+    this.root.add(this.model);
+    // своё тело у каждого — чтобы мерцали и таяли по отдельности
+    const hue = [0xeaf6ff, 0xdff0ff, 0xf1ecff][Math.floor(Math.random() * 3)];
+    this.mat = new THREE.MeshStandardMaterial({ color: hue, emissive: 0x9fd8ff, emissiveIntensity: 0.35,
+      roughness: 0.5, transparent: true, opacity: 0.65, depthWrite: false });
+    this.base = rnd(0.58, 0.7);
+    const body = new THREE.Mesh(k.body, this.mat);
+    this.model.add(body);
+    this.face = new THREE.Group();          // лицо и ручки — непрозрачные, но тоже тают в конце
+    for (const s of [-1, 1]) {
+      const e = new THREE.Mesh(k.eye, k.dark);
+      e.position.set(s * 0.5, 3.55, 1.28);
+      e.scale.set(1, 1.15, 0.5);
+      const h = new THREE.Mesh(k.shine, k.white);
+      h.position.set(s * 0.5 + 0.09, 3.68, 1.43);
+      const c = new THREE.Mesh(k.cheek, k.blush);
+      c.position.set(s * 0.9, 3.05, 1.2);
+      c.rotation.y = s * 0.55;
+      const a = new THREE.Mesh(k.arm, this.mat);
+      a.position.set(s * 1.55, 2.6, 0.3);
+      a.scale.set(0.8, 0.55, 0.7);
+      this.face.add(e, h, c, a);
+    }
+    const m = new THREE.Mesh(k.mouth, k.dark);
+    m.position.set(0, 2.95, 1.42);
+    this.face.add(m);
+    this.model.add(this.face);
+    // мягкая тень-пятно на земле вместо настоящей (у полупрозрачного тела тень была бы чёрной)
+    this.blobMat = new THREE.MeshBasicMaterial({ color: 0x24304a, transparent: true, opacity: 0.22, depthWrite: false });
+    this.blob = new THREE.Mesh(k.blob, this.blobMat);
+    this.blob.rotation.x = -Math.PI / 2;
+    this.blob.position.y = 0.32;
+    this.blob.scale.setScalar(scale);
+    this.root.add(this.blob);
+    this.time = Math.random() * 10;
+    this.rate = 1;
+    this.flash = 0;
+    this.fade = 1;                          // 1 — живое, к 0 — растворилось
+  }
+
+  play() {}
+  setSpeed(t) { this.rate = t; }
+  hit() { this.flash = 1; }
+
+  update(dt) {
+    this.time += dt * (0.6 + 0.4 * this.rate);
+    const t = this.time;
+    this.model.position.y = 1.1 + Math.sin(t * 2.4) * 0.45;              // парение вверх-вниз
+    // мордочкой к ребёнку: тело летит по дороге, а лицо всегда повёрнуто к камере
+    const cam = Math.atan2(camera.position.x - this.root.position.x, camera.position.z - this.root.position.z);
+    this._q = this._q || new THREE.Quaternion();
+    this._e = this._e || new THREE.Euler(0, 0, 0, 'YXZ');
+    this._e.set(0.08 + Math.sin(t * 2.4 + 1) * 0.05, cam, Math.sin(t * 1.7) * 0.09);   // наклон и покачивание
+    this.model.quaternion.copy(this.root.quaternion).invert().multiply(this._q.setFromEuler(this._e));
+    this.blob.scale.setScalar(this.model.scale.x * (1 - Math.sin(t * 2.4) * 0.12));
+    this.flash = Math.max(0, this.flash - dt * 4);
+    const flicker = Math.sin(t * 5.3) * 0.04 + Math.sin(t * 13.1) * 0.02;
+    this.mat.opacity = (this.base + flicker - this.flash * 0.3) * this.fade;
+    this.mat.emissiveIntensity = 0.35 + this.flash * 0.8;
+  }
+
+  /** Растворение: возвращает true, когда исчезло совсем. */
+  vanish(dt) {
+    this.fade = Math.max(0, this.fade - dt / 0.6);
+    this.update(dt);
+    const g = 1 + (1 - this.fade) * 0.5;
+    this.model.scale.setScalar(this.model.userData.s0 * g);
+    this.model.position.y += (1 - this.fade) * 2.5;
+    this.face.visible = this.fade > 0.35;
+    this.blobMat.opacity = 0.22 * this.fade;
+    return this.fade <= 0;
+  }
+}
+
+/** Облачко при исчезновении привидения. */
+function puff(pos, scale = 1) {
+  for (let i = 0; i < 7; i++) {
+    const m = new THREE.Mesh(new THREE.SphereGeometry(rnd(0.5, 0.9) * scale, 10, 8),
+      new THREE.MeshBasicMaterial({ color: 0xf4f9ff, transparent: true, opacity: 0.7, depthWrite: false }));
+    const a = (i / 7) * Math.PI * 2;
+    m.position.copy(pos).add(new THREE.Vector3(Math.cos(a) * 0.8, rnd(2.5, 4.2) * scale, Math.sin(a) * 0.8));
+    scene.add(m);
+    game.vanishing.push({ puff: m, life: 0, vx: Math.cos(a) * 1.6, vz: Math.sin(a) * 1.6 });
+  }
+}
+
+/** Убрать врага со сцены: привидение тает с облачком, обычная тень исчезает сразу (как было). */
+function removeEnemy(e) {
+  if (e.actor instanceof GhostActor) {
+    e.bar.visible = false;
+    e.actor.model.userData.s0 = e.actor.model.scale.x;
+    game.vanishing.push({ ghost: e.actor });
+    puff(e.actor.root.position, e.actor.model.scale.x);
+  } else {
+    scene.remove(e.actor.root);
+  }
+}
+
 /* ─────────────────── состояние ─────────────────── */
 
 const game = {
   shells: level.shells, tails: 5, wave: 0, running: false, over: false, won: false,
-  spawnQueue: [], spawnTimer: 0, enemies: [], towers: new Map(), shots: [], drops: [],
+  spawnQueue: [], spawnTimer: 0, enemies: [], towers: new Map(), shots: [], drops: [], vanishing: [],
   danceUntil: 0, danceReady: 0,
   best: progress.best(level.id),
   voice: localStorage.getItem('tails.voice') !== 'off',
@@ -353,8 +573,9 @@ function build(spotIndex, id) {
   if (game.shells < f.cost || game.towers.has(spotIndex)) return;
   game.shells -= f.cost;
 
-  const actor = new Actor(f.model, { tint: f.tint, clip: 'idle' });
+  const actor = f.model === 'castle' ? new CastleActor() : new Actor(f.model, { tint: f.tint, clip: 'idle' });
   actor.root.position.copy(SPOTS[spotIndex]).setY(0.4);
+  actor.root.userData.spotIndex = spotIndex;
   scene.add(actor.root);
 
   game.towers.set(spotIndex, {
@@ -365,7 +586,7 @@ function build(spotIndex, id) {
   const ring = spotMeshes[spotIndex].userData.ring;
   if (ring) ring.visible = false;
   say(`${f.name} на месте!`);
-  toast(`${f.emoji} ${f.name} встала на плиту`);
+  toast(`${f.emoji} ${f.name} ${f.model === 'castle' ? 'встал' : 'встала'} на плиту`);
   hideBuild();
   drawHud();
 }
@@ -380,6 +601,16 @@ function upgrade(spotIndex) {
   t.range += 2.5;
   t.rate *= 0.85;
   t.upCost = Math.round(t.upCost * 1.7);
+  if (t.actor.setStage) {   // замок: новая стадия модели (после 4-й — остаётся 4-я)
+    t.actor.setStage(t.level);
+    sparks(t.actor.root.position, 10);
+    const words = ['', 'Башня!', 'Выросла стена!', 'Появился мост!', 'Настоящая крепость!'];
+    say(t.level <= 4 ? words[t.level] : 'Замок стал сильнее!');
+    toast(`🏰 Замок — ${t.level <= 4 ? 'стадия ' + t.level : 'уровень ' + t.level}`);
+    showBuild(spotIndex);   // обновить цену следующего роста, меню остаётся под рукой
+    drawHud();
+    return;
+  }
   t.actor.root.scale.setScalar(1 + t.level * 0.12);
   sparks(t.actor.root.position, 6);
   say('Подросла!');
@@ -422,12 +653,15 @@ function startWave() {
 }
 
 function spawnEnemy(cfg) {
-  const a = new Actor(level.enemy, { tint: 0x6a5f8a, scale: 0.92 * cfg.scale, clip: 'run', dark: true });
+  // иногда вместо тени прилетает привидение: здоровье, скорость и награда — те же
+  const ghost = Math.random() < GHOST_CHANCE;
+  const a = ghost ? new GhostActor(0.95 * cfg.scale)
+    : new Actor(level.enemy, { tint: 0x6a5f8a, scale: 0.92 * cfg.scale, clip: 'run', dark: true });
   a.root.position.copy(PATH[0]);
   scene.add(a.root);
 
   const bar = makeBar();
-  bar.position.y = 7.2 * cfg.scale + 1.0;
+  bar.position.y = (ghost ? 6.6 : 7.2) * cfg.scale + 1.0;
   a.root.add(bar);
 
   game.enemies.push({ actor: a, bar, hp: cfg.hp, maxHp: cfg.hp, speed: cfg.speed,
@@ -449,7 +683,8 @@ function makeBar() {
 function shoot(tower, enemy) {
   const ball = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 10),
     new THREE.MeshBasicMaterial({ color: tower.tint }));
-  ball.position.copy(tower.actor.root.position).setY(3.6);
+  if (tower.actor.muzzle) tower.actor.muzzle(ball.position);
+  else ball.position.copy(tower.actor.root.position).setY(3.6);
   scene.add(ball);
   game.shots.push({ mesh: ball, target: enemy, damage: tower.damage, slow: tower.slow, splash: tower.splash });
   tower.actor.play('attack', 1.4, 0.12);
@@ -467,7 +702,7 @@ function sparks(pos, n = 4) {
 }
 
 function killEnemy(e, i) {
-  scene.remove(e.actor.root);
+  removeEnemy(e);
   game.enemies.splice(i, 1);
   game.shells += e.bounty;
   sparks(e.actor.root.position, 3);
@@ -475,7 +710,7 @@ function killEnemy(e, i) {
 }
 
 function leak(e, i) {
-  scene.remove(e.actor.root);
+  removeEnemy(e);
   game.enemies.splice(i, 1);
   game.tails--;
   document.body.classList.add('shake');
@@ -490,12 +725,14 @@ function finish(won) {
   game.over = true;
   game.running = false;
   game.won = won;
-  const next = LEVELS.find((l) => l.id === level.id + 1);
-  if (won) progress.unlock(level.id + 1);
+  const solo = typeof level.id !== 'number';   // «Замок» вне цепочки мест: ничего не открывает
+  const next = solo ? null : LEVELS.find((l) => l.id === level.id + 1);
+  if (won && !solo) progress.unlock(level.id + 1);
 
   $('ov-title').textContent = won ? '🏆 Уровень пройден!' : 'Тени утащили хвостики';
   $('ov-text').textContent = won
-    ? (next ? `${level.name} — наша. Открылось новое место: ${next.name}.`
+    ? (solo ? `${level.name} выстоял! Можно остаться и держать волны дальше.`
+      : next ? `${level.name} — наша. Открылось новое место: ${next.name}.`
             : 'Пройдены все места Герцег-Нови! Можно остаться и держать волны дальше.')
     : `Ты продержалась ${game.wave} волн на месте «${level.name}». Рекорд — ${game.best}.`;
 
@@ -531,8 +768,12 @@ canvas.addEventListener('pointerdown', (e) => {
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / innerHeight) * 2 + 1;
   ray.setFromCamera(mouse, camera);
-  const hit = ray.intersectObjects(spotMeshes, false)[0];
-  if (hit) { highlight(hit.object.userData.spotIndex); showBuild(hit.object.userData.spotIndex); }
+  // замок шире плиты — по нему самому тоже можно ткнуть («Подрасти» / «Домой»)
+  const castles = [...game.towers.values()].filter((t) => t.actor.setStage).map((t) => t.actor.root);
+  const hit = ray.intersectObjects([...spotMeshes, ...castles], true)[0];
+  let o = hit && hit.object;
+  while (o && o.userData.spotIndex === undefined) o = o.parent;
+  if (o) { highlight(o.userData.spotIndex); showBuild(o.userData.spotIndex); }
   else hideBuild();
 });
 
@@ -609,7 +850,8 @@ function tick() {
       if (d <= t.range && e.seg > bestSeg) { target = e; bestSeg = e.seg; }
     }
     if (target) {
-      t.actor.root.lookAt(tmp.copy(target.actor.root.position).setY(t.actor.root.position.y));
+      if (t.actor.aim) t.actor.aim(target.actor.root.position);   // замок стоит фасадом к камере, крутится только прицел
+      else t.actor.root.lookAt(tmp.copy(target.actor.root.position).setY(t.actor.root.position.y));
       shoot(t, target);
       t.cool = t.rate;
     }
@@ -622,6 +864,7 @@ function tick() {
     const d = s.mesh.position.distanceTo(to);
     if (d < 1.6) {
       s.target.hp -= s.damage;
+      if (s.target.actor.hit) s.target.actor.hit();   // привидение вздрагивает и светлеет
       if (s.slow) s.target.slow = 1.6;
       if (s.splash) {
         for (const e of game.enemies) {
@@ -637,6 +880,19 @@ function tick() {
 
   for (let i = game.enemies.length - 1; i >= 0; i--) {
     if (game.enemies[i].hp <= 0) killEnemy(game.enemies[i], i);
+  }
+
+  for (let i = game.vanishing.length - 1; i >= 0; i--) {   // тающие привидения и облачка
+    const v = game.vanishing[i];
+    if (v.ghost) {
+      if (v.ghost.vanish(dt)) { scene.remove(v.ghost.root); v.ghost.mat.dispose(); v.ghost.blobMat.dispose(); game.vanishing.splice(i, 1); }
+    } else {
+      v.life += dt / 0.8;
+      v.puff.scale.setScalar(1 + v.life * 1.4);
+      v.puff.position.x += v.vx * dt; v.puff.position.z += v.vz * dt; v.puff.position.y += 1.2 * dt;
+      v.puff.material.opacity = 0.7 * (1 - v.life);
+      if (v.life >= 1) { scene.remove(v.puff); v.puff.geometry.dispose(); v.puff.material.dispose(); game.vanishing.splice(i, 1); }
+    }
   }
 
   for (let i = game.drops.length - 1; i >= 0; i--) {
@@ -674,13 +930,24 @@ function tick() {
 
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
 const need = [...new Set([level.enemy, ...FRIEND_IDS.map((id) => FRIENDS[id].model)])];
+// загрузки: персонажи — по одной модели; замок — все 4 стадии сразу (в кэш, чтобы смена была мгновенной)
+const jobs = [];
+for (const kind of need) {
+  if (MODELS[kind].stages) {
+    MODELS[kind].stages.forEach((url, i) => jobs.push({ url, ok: (gltf) => { castleStages[i] = gltf.scene; } }));
+  } else {
+    jobs.push({ url: MODELS[kind].url, ok: (gltf) => {
+      const size = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3());
+      loaded[kind] = { gltf, scale: MODELS[kind].height / Math.max(0.001, size.y) };
+    } });
+  }
+}
 
 let done = 0;
-for (const kind of need) {
-  loader.load(MODELS[kind].url, (gltf) => {
-    const size = new THREE.Box3().setFromObject(gltf.scene).getSize(new THREE.Vector3());
-    loaded[kind] = { gltf, scale: MODELS[kind].height / Math.max(0.001, size.y) };
-    if (++done === need.length) begin();
+for (const job of jobs) {
+  loader.load(job.url, (gltf) => {
+    job.ok(gltf);
+    if (++done === jobs.length) begin();
   }, (e) => {
     if (e.lengthComputable) $('load-bar').style.width = Math.round((e.loaded / e.total) * 100) + '%';
   }, (err) => {
@@ -708,6 +975,10 @@ function begin() {
   scene.fog.far = dist * 2.8;
   drawHud();
   toast(`${level.name}: ${level.hint}`, 6000);
-  say(`Уровень ${level.id}. ${level.name}. Ставь подружек на плиты!`);
+  say(level.speech || `Уровень ${level.id}. ${level.name}. Ставь подружек на плиты!`);
   tick();
+  // для автопроверок (скриншоты стадий замка): play.html?level=castle&debug=1
+  if (new URLSearchParams(location.search).has('debug')) {
+    window.__td = { game, camera, controls, SPOTS, spotMeshes, build, upgrade, showBuild };
+  }
 }

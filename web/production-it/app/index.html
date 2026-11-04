@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Production IT</title>
+<meta name="description" content="Production IT — чаты, звонки и встречи команды">
+<meta name="theme-color" content="#12111C">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Production IT">
+<link rel="preload" href="/meet/fonts/Gilroy-Regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="app.css?v=1">
+</head>
+<body>
+<div id="boot" class="boot"><div class="logo big">Production IT</div></div>
+
+<!-- вход -->
+<section id="login" class="login" hidden>
+  <div class="login-top"><div class="lang" data-lang-switch></div></div>
+  <form id="loginForm" class="login-card" autocomplete="on" novalidate>
+    <img src="icon-192.png" alt="" class="login-icon" width="72" height="72">
+    <div class="logo big">Production IT</div>
+    <p class="tagline" data-t="tagline"></p>
+    <div id="stepEmail">
+      <label><span data-t="email"></span><input id="lEmail" type="email" name="email" autocomplete="email" inputmode="email" required></label>
+      <label><span data-t="name"></span><input id="lName" type="text" name="name" autocomplete="name" maxlength="40"></label>
+      <button class="btn wide" id="lGet" type="submit" data-t="get_code"></button>
+    </div>
+    <div id="stepCode" hidden>
+      <p class="hint" id="lSent"></p>
+      <label><span data-t="code"></span><input id="lCode" class="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="\d{6}"></label>
+      <button class="btn wide" id="lVerify" type="submit" data-t="sign_in"></button>
+      <div class="row center"><button type="button" class="link" id="lResend" data-t="resend"></button><button type="button" class="link" id="lOther" data-t="other_email"></button></div>
+    </div>
+    <p class="err" id="lErr" role="alert"></p>
+  </form>
+  <p class="login-foot"><a href="/production-it/" data-t="about"></a> · <a href="https://play.google.com/store/apps/details?id=com.prodit.meet" target="_blank" rel="noopener">Google Play</a></p>
+</section>
+
+<!-- приложение -->
+<div id="app" class="app" hidden>
+  <nav id="rail" class="rail">
+    <div class="rail-head">
+      <a href="#/" class="logo">Production IT</a>
+      <div class="me" id="meLine"></div>
+    </div>
+    <div class="nav" id="nav"></div>
+    <div class="rail-foot"><div class="lang" data-lang-switch></div><span class="ver" id="ver"></span></div>
+  </nav>
+  <section id="list" class="pane list"></section>
+  <main id="main" class="pane main"></main>
+</div>
+
+<!-- звонок / комната -->
+<div id="call" class="call" hidden>
+  <div class="call-bar">
+    <span class="call-title" id="callTitle"></span>
+    <a id="callTab" class="chip" target="_blank" rel="noopener" data-t="new_tab"></a>
+    <button class="chip danger" id="callEnd" data-t="leave"></button>
+  </div>
+  <iframe id="callFrame" title="call" allow="camera; microphone; display-capture; fullscreen; autoplay; clipboard-write" allowfullscreen></iframe>
+</div>
+
+<div id="modal" class="modal" hidden><div class="modal-card" id="modalCard" role="dialog" aria-modal="true"></div></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script type="module" src="app.js?v=1"></script>
+</body>
+</html>

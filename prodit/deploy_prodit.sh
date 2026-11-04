@@ -79,6 +79,15 @@ services:
     ports: ['127.0.0.1:8831:8000']
     mem_limit: 256m
     ulimits: { nofile: { soft: 65536, hard: 65536 } }
+  remind:
+    image: curlimages/curl:latest
+    restart: unless-stopped
+    env_file: .env
+    mem_limit: 32m
+    entrypoint:
+      - sh
+      - -c
+      - while true; do curl -s -o /dev/null -X POST -H X-Remind-Key:\$\$RT_API_KEY http://php/video_api.php?action=prodit_remind; sleep 60; done
 YML
 docker compose up -d --remove-orphans && docker compose restart php >/dev/null && docker compose ps --format '{{.Name}} {{.Status}}'"
 
