@@ -119,6 +119,11 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--acc);outline-off
       <div><label for="time" data-t="time"></label><input id="time" type="time" required step="300"></div>
       <div><label for="dur" data-t="dur"></label><select id="dur"><option>15</option><option selected>30</option><option>45</option><option>60</option><option>90</option><option>120</option></select></div>
     </div>
+    <div id="scopeRow" hidden><label for="scope" data-t="r_scope"></label><select id="scope"><option value="one" data-t="r_one"></option><option value="all" data-t="r_all"></option></select></div>
+    <div class="r2" id="recurRow">
+      <div><label for="recur" data-t="r_repeat"></label><select id="recur"><option value="" data-t="r_none"></option><option value="daily" data-t="r_daily"></option><option value="weekdays" data-t="r_weekdays"></option><option value="weekly" data-t="r_weekly"></option><option value="biweekly" data-t="r_biweekly"></option><option value="monthly" data-t="r_monthly"></option></select></div>
+      <div id="untilBox"><label for="until" data-t="r_until"></label><input id="until" type="date"></div>
+    </div>
     <div class="r2">
       <div><label for="org" data-t="org"></label><input id="org" maxlength="80" autocomplete="name"></div>
       <div><label for="orgmail" data-t="orgmail"></label><input id="orgmail" type="email" autocomplete="email"></div>
@@ -145,7 +150,7 @@ const DEFAULT_GUESTS=['venger.yura@gmail.com','hexneo36@gmail.com','panchuk35@gm
 const T={
 ru:{h1:'Встречи Production IT',lead:'Нажмите на свободное время — встреча создастся, гости получат письмо со ссылкой и приглашением в календарь. Любую встречу можно изменить или отменить — нажмите на неё.',
 editTitle:'Изменить встречу',save:'Сохранить и разослать',dropMeeting:'Отменить встречу',confirmDrop:'Отменить встречу? Гости получат отмену.',
-needKey:'Сегодня вы уже создали или изменили 5 встреч — дальше нужен код доступа.',needKeyHint:'Без кода — до 5 встреч в сутки.',notYours:'Эту встречу может изменить только тот, кто её создал',
+adminNote:'Вы админ и только поэтому видите эту встречу',loginNeeded:'Встречи видят только их участники. Откройте календарь в приложении Production IT — там вы увидите свои встречи.',needKey:'Сегодня вы уже создали или изменили 5 встреч — дальше нужен код доступа.',needKeyHint:'Без кода — до 5 встреч в сутки.',notYours:'Эту встречу может изменить только тот, кто её создал',
 key:'Код доступа',enter:'Войти',today:'Сегодня',new:'+ Встреча',newTitle:'Новая встреча',title:'Тема',date:'Дата',time:'Время',dur:'Минут',org:'Организатор',orgmail:'Почта организатора',
 guests:'Гости',guestsHint:'Удалить — ✕. Добавить — впишите адрес и нажмите Enter или запятую.',note:'Повестка',go:'Создать и разослать',cancel:'Отмена',
 ok:'Встреча создана',okLead:'Приглашения отправлены. Ссылка:',open:'Открыть встречу',copy:'Скопировать',copied:'Скопировано',close:'Закрыть',
@@ -153,7 +158,7 @@ tz:'Часовой пояс: ',busy:'Отправляю…',errKey:'Неверн
 adp:'чат, видеозвонки и встречи команды в одном приложении. Встречи из этого календаря — в один тап.',ad:'видеоплеер, чат и звонки на телефоне. Встречи — в один тап.',days:['Пн','Вт','Ср','Чт','Пт','Сб','Вс']},
 en:{h1:'Production IT meetings',lead:'Click a free time — the meeting is created and guests get an email with the link and a calendar invitation. Click any meeting to change or cancel it.',
 editTitle:'Edit meeting',save:'Save and send',dropMeeting:'Cancel meeting',confirmDrop:'Cancel the meeting? Guests will be notified.',
-needKey:'You have already created or changed 5 meetings today — an access code is needed now.',needKeyHint:'Without a code — up to 5 meetings a day.',notYours:'Only the person who created this meeting can change it',
+adminNote:'You are an admin — that is the only reason you can see this meeting',loginNeeded:'Meetings are visible only to their participants. Open the calendar in the Production IT app to see yours.',needKey:'You have already created or changed 5 meetings today — an access code is needed now.',needKeyHint:'Without a code — up to 5 meetings a day.',notYours:'Only the person who created this meeting can change it',
 key:'Access code',enter:'Enter',today:'Today',new:'+ Meeting',newTitle:'New meeting',title:'Topic',date:'Date',time:'Time',dur:'Minutes',org:'Organizer',orgmail:'Organizer email',
 guests:'Guests',guestsHint:'Remove — ✕. Add — type an email and press Enter or comma.',note:'Agenda',go:'Create and send',cancel:'Cancel',
 ok:'Meeting created',okLead:'Invitations sent. Link:',open:'Open meeting',copy:'Copy',copied:'Copied',close:'Close',
@@ -161,18 +166,24 @@ tz:'Time zone: ',busy:'Sending…',errKey:'Wrong access code',errNet:'Cannot rea
 adp:'team chat, video calls and meetings in one app. Meetings from this calendar — in one tap.',ad:'video player, chat and calls on your phone. Meetings in one tap.',days:['Mon','Tue','Wed','Thu','Fri','Sat','Sun']},
 sr:{h1:'Састанци Production IT',lead:'Кликните на слободно време — састанак се прави, а гости добијају имејл са линком и позивницом за календар. Кликните на било који састанак да га измените или откажете.',
 editTitle:'Измени састанак',save:'Сачувај и пошаљи',dropMeeting:'Откажи састанак',confirmDrop:'Отказати састанак? Гости ће добити обавештење.',
-needKey:'Данас сте већ направили или изменили 5 састанака — сада је потребан код за приступ.',needKeyHint:'Без кода — до 5 састанака дневно.',notYours:'Овај састанак може да измени само онај ко га је направио',
+adminNote:'Ви сте админ и само зато видите овај састанак',loginNeeded:'Састанке виде само њихови учесници. Отворите календар у апликацији Production IT да видите своје.',needKey:'Данас сте већ направили или изменили 5 састанака — сада је потребан код за приступ.',needKeyHint:'Без кода — до 5 састанака дневно.',notYours:'Овај састанак може да измени само онај ко га је направио',
 key:'Код за приступ',enter:'Уђи',today:'Данас',new:'+ Састанак',newTitle:'Нови састанак',title:'Тема',date:'Датум',time:'Време',dur:'Минута',org:'Организатор',orgmail:'Имејл организатора',
 guests:'Гости',guestsHint:'Уклони — ✕. Додај — упишите адресу и притисните Enter или зарез.',note:'Дневни ред',go:'Направи и пошаљи',cancel:'Откажи',
 ok:'Састанак је направљен',okLead:'Позивнице су послате. Линк:',open:'Отвори састанак',copy:'Копирај',copied:'Копирано',close:'Затвори',
 tz:'Временска зона: ',busy:'Шаљем…',errKey:'Погрешан код за приступ',errNet:'Нема везе са сервером',errLimit:'Дневни лимит је достигнут',errGuests:'Додајте бар једног госта',backup:'Резервни линк (Zoom итд.), опционо',failed:'Није испоручено: ',
 adp:'чет, видео позиви и састанци тима у једној апликацији. Састанци из овог календара — једним додиром.',ad:'видео плејер, чет и позиви на телефону. Састанци једним додиром.',days:['Пон','Уто','Сре','Чет','Пет','Суб','Нед']}};
+// регулярные встречи
+Object.assign(T.ru,{r_repeat:'Повтор',r_none:'Не повторять',r_daily:'Каждый день',r_weekdays:'По будням',r_weekly:'Каждую неделю',r_biweekly:'Раз в две недели',r_monthly:'Каждый месяц',r_until:'До даты (необязательно)',r_scope:'Что изменить',r_one:'Только эту встречу',r_all:'Всю серию'});
+Object.assign(T.en,{r_repeat:'Repeat',r_none:'Does not repeat',r_daily:'Every day',r_weekdays:'Every weekday',r_weekly:'Every week',r_biweekly:'Every two weeks',r_monthly:'Every month',r_until:'Until (optional)',r_scope:'Apply to',r_one:'This meeting only',r_all:'The whole series'});
+Object.assign(T.sr,{r_repeat:'Понављање',r_none:'Не понавља се',r_daily:'Сваког дана',r_weekdays:'Радним данима',r_weekly:'Сваке недеље',r_biweekly:'На две недеље',r_monthly:'Сваког месеца',r_until:'До датума (опционо)',r_scope:'Шта променити',r_one:'Само овај састанак',r_all:'Целу серију'});
 const $=id=>document.getElementById(id);
 const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 let CLIENT=localStorage.getItem('pit.client');   // этот браузер: свои встречи и лимит без кода
 if(!CLIENT){CLIENT=Array.from(crypto.getRandomValues(new Uint8Array(12)),b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem('pit.client',CLIENT)}
 const H0=8,H1=22,PX=44;   // часы сетки и высота часа
 let L=localStorage.getItem('pit.lang')||(navigator.language||'ru').slice(0,2);if(!T[L])L='en';
+(function(){const q=new URLSearchParams(location.search);const t=q.get('t');if(t){sessionStorage.setItem('pit.viewer',t);q.delete('t');history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')+location.hash)}})();
+const VIEWER=sessionStorage.getItem('pit.viewer')||'';
 let KEY=localStorage.getItem('pit.key')||'',ALL=false,EDIT=null,items=[],week=monday(new Date()),day=(new Date().getDay()+6)%7,guests=[];
 function monday(d){d=new Date(d);d.setHours(0,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return d}
 const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
@@ -184,10 +195,15 @@ document.querySelectorAll('.lang button').forEach(b=>b.onclick=()=>lang(b.datase
 
 async function load(){
  $('cal').hidden=false;$('gate').hidden=true;
- try{const r=await fetch('/meet/api/list',{headers:{'X-Meet-Key':KEY,'X-Client':CLIENT}});const j=await r.json();
-  items=j.items||[];ALL=!!j.all;draw();
+ try{const r=await fetch('/meet/api/list',{headers:{'X-Meet-Key':KEY,'X-Client':CLIENT,'X-Meet-Viewer':VIEWER}});const j=await r.json();
+  items=j.items||[];ALL=!!j.all;loginHint(!!j.login);draw();
  }catch(e){draw()}}
 
+function loginHint(on){let h=$('loginhint');if(!h){h=document.createElement('p');h.id='loginhint';h.className='err';h.style.margin='8px 0';
+ $('cal').prepend(h)}h.textContent=on?T[L].loginNeeded:'';h.hidden=!on}
+function adminNote(box,it){let n=box.querySelector('.adminnote');if(!n){n=document.createElement('p');n.className='adminnote';
+ n.style.cssText='margin:6px 0 10px;padding:8px 12px;border-radius:10px;background:rgba(247,184,61,.14);color:#f7b83d;font-size:13px';
+ box.insertBefore(n,box.querySelector('h2').nextSibling)}n.textContent=T[L].adminNote;n.hidden=!it||!it.admin_view}
 // пространства компаний: домены почты участников (кроме публичных почтовых сервисов); вид: неделя или список всех встреч
 const PUB=['gmail.com','googlemail.com','yandex.ru','ya.ru','yandex.com','mail.ru','bk.ru','inbox.ru','list.ru','rambler.ru','outlook.com','hotmail.com','live.com','icloud.com','me.com','yahoo.com','proton.me','protonmail.com','gmx.com','gmx.de','aol.com','zoho.com','mail.com'];
 const UI={ru:{all:'Все пространства',week:'Неделя',list:'Все встречи',none:'Встреч нет',org:'Организатор'},
@@ -212,7 +228,7 @@ function drawList(){const box=$('mlist'),now=new Date();box.innerHTML='';
   const sp=[...spacesOf(it)];
   row.innerHTML='<b style="min-width:52px;color:var(--ink)">'+pad(st.getHours())+':'+pad(st.getMinutes())+'</b><div style="flex:1;min-width:0"><div class="t" style="color:var(--ink);font-weight:500"></div><div class="o" style="font-size:13px;color:var(--sub)"></div></div>'
    +(sp.length?'<span style="font-size:12px;border:1px solid var(--line);border-radius:40px;padding:3px 10px;color:var(--sub)">@'+sp[0]+'</span>':'');
-  row.querySelector('.t').textContent=it.title;row.querySelector('.o').textContent=ui().org+': '+(it.organizer||it.organizer_email||'');
+  row.querySelector('.t').textContent=it.title;row.querySelector('.o').textContent=(it.recur?'↻ '+T[L]['r_'+it.recur]+' · ':'')+ui().org+': '+(it.organizer||it.organizer_email||'');
   row.onclick=()=>view(it);box.appendChild(row)}}
 $('space').onchange=e=>{SPACE=e.target.value;localStorage.setItem('pit.space',SPACE);draw()};
 $('mode').onclick=()=>{MODE=MODE==='list'?'week':'list';localStorage.setItem('pit.mode',MODE);draw()};
@@ -241,7 +257,7 @@ function draw(){
   for(const it of shown()){const st=new Date(it.start);if(iso(st)!==iso(d))continue;
    const top=((st.getHours()+st.getMinutes()/60)-H0)*PX;if(top<0||top>(H1-H0)*PX)continue;
    const e=document.createElement('div');e.className='ev';e.style.top=top+'px';e.style.height=Math.max(22,it.minutes/60*PX-2)+'px';
-   e.innerHTML='<b></b>'+pad(st.getHours())+':'+pad(st.getMinutes());e.firstChild.textContent=it.title;e.onclick=ev=>{ev.stopPropagation();view(it)};col.appendChild(e)}
+   e.innerHTML='<b></b>'+pad(st.getHours())+':'+pad(st.getMinutes())+(it.recur?' ↻':'');e.firstChild.textContent=it.title;e.onclick=ev=>{ev.stopPropagation();view(it)};col.appendChild(e)}
   g.appendChild(col)}
  const sc=$('scroller');if(!sc.dataset.s){sc.scrollTop=Math.max(0,(Math.min(now.getHours(),18)-H0-1))*PX;sc.dataset.s=1}}
 $('prev').onclick=()=>{week.setDate(week.getDate()-7);draw()};$('next').onclick=()=>{week.setDate(week.getDate()+7);draw()};
@@ -256,23 +272,29 @@ function addGuest(){const v=$('addmail').value.split(/[\s,;]+/).map(s=>s.trim())
 $('addmail').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===','||e.key===';'){e.preventDefault();addGuest()}});
 $('addmail').addEventListener('blur',addGuest);
 
+let EDITIT=null;   // открытая на правку встреча: у серии один uid, а дату задаёт start
+function recurUi(){const one=!!(EDITIT&&EDITIT.recur)&&$('scope').value==='one';$('recurRow').hidden=one;$('untilBox').style.visibility=$('recur').value?'':'hidden'}
+function setRecur(it){EDITIT=it;const series=!!(it&&it.recur);$('scopeRow').hidden=!series;$('scope').value='one';$('recur').value=it?it.recur||'':'';$('until').value=it?it.until||'':'';recurUi()}
+$('scope').onchange=recurUi;$('recur').onchange=recurUi;
+function scopeBody(){return EDITIT&&EDITIT.recur?{occurrence:EDITIT.start,scope:$('scope').value}:{}}
+function recurBody(){return EDITIT&&EDITIT.recur&&$('scope').value==='one'?{}:{recur:$('recur').value,until:$('recur').value?$('until').value:''}}
 function show(which){['f','done','view'].forEach(id=>$(id).hidden=id!==which);$('dim').classList.add('show')}
 function hide(){$('dim').classList.remove('show')}
-function openNew(t){EDIT=null;$('drop').hidden=true;$('go').textContent=T[L].go;document.querySelector('#f h2').textContent=T[L].newTitle;
- $('keyrow').hidden=true;$('title').value='';$('note').value='';$('err').textContent='';$('date').value=iso(t);$('time').value=pad(t.getHours())+':'+pad(t.getMinutes());
+function openNew(t){EDIT=null;adminNote($('f'),null);$('drop').hidden=true;$('go').textContent=T[L].go;document.querySelector('#f h2').textContent=T[L].newTitle;
+ $('keyrow').hidden=true;setRecur(null);$('title').value='';$('note').value='';$('err').textContent='';$('date').value=iso(t);$('time').value=pad(t.getHours())+':'+pad(t.getMinutes());
  $('org').value=localStorage.getItem('pit.org')||'';$('orgmail').value=localStorage.getItem('pit.orgmail')||'';guests=DEFAULT_GUESTS.slice();chips();show('f');setTimeout(()=>$('title').focus(),50)}
 function openEdit(it){const st=new Date(it.start);EDIT=it.uid;$('drop').hidden=false;$('go').textContent=T[L].save;
  document.querySelector('#f h2').textContent=T[L].editTitle;$('keyrow').hidden=true;$('err').textContent='';
  $('title').value=it.title;$('note').value=it.note||'';$('date').value=iso(st);$('time').value=pad(st.getHours())+':'+pad(st.getMinutes());
  const ds=$('dur');if(![...ds.options].some(o=>+o.value===it.minutes))ds.add(new Option(it.minutes,it.minutes));ds.value=it.minutes;
  $('org').value=it.organizer||'';$('orgmail').value=it.organizer_email||'';
- guests=(it.emails||[]).filter(e=>!it.organizer_email||e.toLowerCase()!==it.organizer_email.toLowerCase());chips();show('f')}
-function view(it){if(it.mine||ALL)return openEdit(it);const st=new Date(it.start);$('vtitle').textContent=it.title;
+ guests=(it.emails||[]).filter(e=>!it.organizer_email||e.toLowerCase()!==it.organizer_email.toLowerCase());setRecur(it);chips();adminNote($('f'),it);show('f')}
+function view(it){if(it.mine||ALL)return openEdit(it);const st=new Date(it.start);$('vtitle').textContent=it.title;adminNote($('view'),it);
  $('vwhen').textContent=new Intl.DateTimeFormat(L,{weekday:'long',day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}).format(st)+' · '+it.minutes+' '+T[L].dur.toLowerCase();
  $('vlink').textContent=it.link;$('vopen').href=it.link;$('vcopy').textContent=T[L].copy;show('view')}
 $('cancel').onclick=hide;
 $('drop').onclick=async()=>{if(!EDIT||!confirm(T[L].confirmDrop))return;
- const r=await fetch('/meet/api/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:EDIT,cancel:true,key:KEY,client:CLIENT})});
+ const r=await fetch('/meet/api/edit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({uid:EDIT,cancel:true,key:KEY,client:CLIENT,viewer:VIEWER,...scopeBody()})});
  const j=await r.json();if(j.ok){hide();load()}else if(r.status===401){$('keyrow').hidden=false;$('err').textContent=T[L].needKey}else $('err').textContent=j.error||'error'};$('close').onclick=hide;$('vclose').onclick=hide;$('dim').onclick=e=>{if(e.target.id==='dim')hide()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')hide()});
 $('copy').onclick=()=>{navigator.clipboard.writeText($('link').textContent);$('copy').textContent=T[L].copied};
@@ -281,8 +303,8 @@ $('f').onsubmit=async e=>{e.preventDefault();addGuest();$('err').textContent='';
  if(!guests.length){$('err').textContent=T[L].errGuests;return}
  const go=$('go');go.disabled=true;go.textContent=T[L].busy;
  if(!$('keyrow').hidden&&$('fkey').value.trim()){KEY=$('fkey').value.trim();localStorage.setItem('pit.key',KEY)}
- const body={key:KEY,client:CLIENT,uid:EDIT||undefined,title:$('title').value.trim(),start:new Date($('date').value+'T'+$('time').value).toISOString(),tz,duration:+$('dur').value,
-  organizer:$('org').value.trim(),organizer_email:$('orgmail').value.trim(),emails:guests,note:$('note').value.trim(),lang:L};
+ const body={key:KEY,client:CLIENT,viewer:VIEWER,uid:EDIT||undefined,title:$('title').value.trim(),start:new Date($('date').value+'T'+$('time').value).toISOString(),tz,duration:+$('dur').value,
+  organizer:$('org').value.trim(),organizer_email:$('orgmail').value.trim(),emails:guests,note:$('note').value.trim(),lang:L,...scopeBody(),...recurBody()};
  try{const r=await fetch(EDIT?'/meet/api/edit':'/meet/api/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});const j=await r.json();
   if(!j.ok){if(r.status===401){$('keyrow').hidden=false;$('err').textContent=KEY?T[L].errKey:T[L].needKey;$('fkey').focus()}
    else $('err').textContent=r.status===403?T[L].notYours:r.status===429?T[L].errLimit:(j.error||'error');return}

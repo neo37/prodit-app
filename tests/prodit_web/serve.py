@@ -4,9 +4,9 @@
   PHP 8.3 (video_api.php + prodit_ext.php, чистая база) и Centrifugo v6 — в Docker, в своей сети;
   подставные SMTP (письма с кодом ловятся здесь), календарь встреч (/meet/api/) и выдача токенов LiveKit;
   один origin, как на spacecode.business:
-     /production-it/app/  — веб-клиент из ~/infra/spacecode-site/extra/production-it/app
-     /meet/               — страница календаря и шрифты из ~/infra/spacecode-site/extra/meet, /img/ — картинки сайта
-     /meet/api/…          — подставной календарь
+     /production-it/app/  — веб-клиент из web/production-it/app этого репозитория
+     /meet/               — страница календаря из meet/web, шрифты и /img/ — из ~/infra/spacecode-site
+     /meet/api/…          — настоящий meet/meet_api.py с временной базой (письма не отправляются)
      /prodit/video_api.php → PHP в Docker
      /__test/code?email=  — последний код из подставной почты (для автотеста)
      /__test/mails        — все пойманные письма (кому, тема)
@@ -20,11 +20,16 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 HERE = os.path.dirname(os.path.abspath(__file__))
 PHP_SRC = os.path.join(HERE, '..', '..', 'php')
 SITE = os.path.expanduser('~/infra/spacecode-site/extra')
+REPO = os.path.join(HERE, '..', '..')
+os.environ.update(MEET_DATA=tempfile.mkdtemp(prefix='prodit-meet-'), MEET_KEY='mk', SMTP_HOST='', SMTP2_HOST='')
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.path.join(REPO, 'meet'))
+import meet_api  # noqa: E402
+meet_api.ROOMS = 'https://efir.invalid/rooms/'
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 18150
 PHP_PORT, SMTP_PORT, CF_PORT = PORT + 1, PORT + 2, PORT + 3
 TAG = f'prodit-web-{PORT}'
 mails = []          # (to, subject, text)
-meetings = []       # подставной календарь
 lock = threading.Lock()
 
 
@@ -73,14 +78,12 @@ def smtp_session(c):
 
 def seed_meetings():
     now = datetime.now(timezone.utc).replace(second=0, microsecond=0)
-    def m(uid, title, dt, mins, org, org_email, emails, room):
-        return {'uid': uid, 'title': title, 'start': (now + dt).isoformat(), 'minutes': mins, 'organizer': org, 'organizer_email': org_email,
-                'emails': emails, 'link': f'https://efir.invalid/rooms/{room}', 'tz': 'Europe/Moscow'}
-    meetings.extend([
-        m('1', 'Планёрка команды', timedelta(minutes=-10), 30, 'Борис', 'boris@acme.io', ['anna@acme.io', 'boris@acme.io'], 'productionit-plan-1'),
-        m('2', 'Демо заказчику', timedelta(hours=3), 60, 'Анна', 'anna@acme.io', ['client@example.com'], 'productionit-demo-2'),
-        m('3', 'Ретро спринта', timedelta(days=1, hours=1), 45, 'Ольга', 'olga@other.org', ['olga@other.org'], 'productionit-retro-3'),
-    ])
+    def m(title, dt, mins, org, org_email, emails):
+        meet_api.create({'key': 'mk', 'title': title, 'start': (now + dt).isoformat(), 'tz': 'Europe/Moscow', 'duration': mins,
+                         'organizer': org, 'organizer_email': org_email, 'emails': emails, 'lang': 'ru'})
+    m('Планёрка команды', timedelta(minutes=-10), 30, 'Борис', 'boris@acme.io', ['anna@acme.io', 'boris@acme.io'])
+    m('Демо заказчику', timedelta(hours=3), 60, 'Анна', 'anna@acme.io', ['client@example.com'])
+    m('Ретро спринта', timedelta(days=1, hours=1), 45, 'Ольга', 'olga@other.org', ['olga@other.org'])
 
 
 class H(BaseHTTPRequestHandler):
@@ -128,19 +131,16 @@ class H(BaseHTTPRequestHandler):
 
     def _meet_api(self):
         p = self.path.split('?')[0]
+        ip = ''   # на стенде все ходят с одного адреса: лимит «5 действий с IP» иначе срабатывает между тестами
         if p.endswith('/list'):
-            return self._send(200, {'ok': True, 'items': meetings})
-        if p.endswith('/create') and self.command == 'POST':
-            b = json.loads(self.rfile.read(int(self.headers.get('Content-Length') or 0)) or b'{}')
-            room = f'productionit-new-{len(meetings) + 1}'
-            it = {'uid': str(len(meetings) + 1), 'title': b.get('title', ''), 'start': b.get('start', ''), 'minutes': int(b.get('duration') or 60),
-                  'organizer': b.get('organizer', ''), 'organizer_email': b.get('organizer_email', ''), 'emails': b.get('emails', []),
-                  'link': f'https://efir.invalid/rooms/{room}', 'tz': b.get('tz', ''), 'note': b.get('note', '')}
-            meetings.append(it)
-            print(f"  [встреча] {it['title']} {it['start']} гости={it['emails']}", flush=True)
-            return self._send(200, {'ok': True, 'room': room, 'link': it['link'], 'uid': it['uid']})
+            code, r = meet_api.upcoming(self.headers.get('X-Meet-Key', ''), '', self.headers.get('X-Meet-Viewer', ''))
+            return self._send(code, r)
         if p.endswith('/connection-details'):
             return self._send(200, {'serverUrl': 'wss://lk.invalid', 'participantToken': 'tok', 'roomName': 'x'})
+        if self.command == 'POST' and (p.endswith('/create') or p.endswith('/edit')):
+            b = json.loads(self.rfile.read(int(self.headers.get('Content-Length') or 0)) or b'{}')
+            code, r = (meet_api.create if p.endswith('/create') else meet_api.edit)(b, ip, str(b.get('client') or ''))
+            return self._send(code, r)
         self._send(404, {'ok': False, 'error': 'not found'})
 
     def _route(self):
@@ -161,13 +161,14 @@ class H(BaseHTTPRequestHandler):
             with lock:
                 return self._send(200, [{'to': m['to'], 'subject': m['subject']} for m in mails])
         if p == '/__test/meetings':
-            return self._send(200, meetings)
+            return self._send(200, meet_api.upcoming('mk')[1]['items'])
         if p.startswith('/production-it/'):
-            return self._static(os.path.join(SITE, 'production-it'), urllib.parse.unquote(p[len('/production-it/'):]))
+            return self._static(os.path.join(REPO, 'web', 'production-it'), urllib.parse.unquote(p[len('/production-it/'):]))
         if p.startswith('/img/'):
             return self._static(os.path.join(SITE, '..', 'img'), urllib.parse.unquote(p[len('/img/'):]))
         if p.startswith('/meet/'):
-            return self._static(os.path.join(SITE, 'meet'), urllib.parse.unquote(p[len('/meet/'):]))
+            root = os.path.join(SITE, 'meet') if p.startswith('/meet/fonts/') else os.path.join(REPO, 'meet', 'web')
+            return self._static(root, urllib.parse.unquote(p[len('/meet/'):]))
         if p == '/':
             return self._send(302, b'', 'text/plain', {'Location': '/production-it/app/'})
         self._send(404, b'not found', 'text/plain')

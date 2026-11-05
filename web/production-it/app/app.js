@@ -38,18 +38,23 @@ const T = {
     title: 'Тема', date: 'Дата', time: 'Время', minutes: 'Длительность, мин', guests: 'Гости — email через запятую', note: 'Комментарий',
     create: 'Создать и разослать', created: 'Встреча создана, приглашения отправлены', need_title: 'Нужны тема и хотя бы один гость',
     today: 'Сегодня', tomorrow: 'Завтра', yesterday: 'Вчера', share_link: 'Ссылка для гостей', link_copied: 'Ссылка скопирована', organizer: 'Организатор',
+    r_repeat: 'Повтор', r_none: 'Не повторять', r_daily: 'Каждый день', r_weekdays: 'По будням', r_weekly: 'Каждую неделю', r_biweekly: 'Раз в две недели', r_monthly: 'Каждый месяц',
+    r_until: 'До даты (необязательно)', r_until_short: 'до %s', r_scope: 'Что изменить', r_one: 'Только эту встречу', r_all: 'Всю серию', r_bad_until: 'Дата окончания раньше начала',
+    r_confirm_one: 'Отменить только эту встречу? Участники получат уведомление, остальные даты серии останутся.', r_confirm_all: 'Отменить всю серию встреч? Участники получат уведомление.',
+    cal_prev: 'Предыдущая неделя', cal_next: 'Следующая неделя', participants: 'Участники', close: 'Закрыть', edit_meeting: 'Изменить', save: 'Сохранить', saved: 'Изменения сохранены, участники получат письмо',
+    cancel_meeting: 'Отменить встречу', confirm_cancel: 'Отменить встречу? Участники получат уведомление.', cancelled: 'Встреча отменена', admin_note: 'Вы админ и только поэтому видите эту встречу',
     cal_grid: 'Календарь', no_chats: 'Диалогов пока нет. Напишите коллеге по email.', pick_chat: 'Выберите диалог слева',
     message: 'Сообщение…', send: 'Отправить', delete_q: 'Удалить сообщение у всех?', delete: 'Удалить', deleted: 'Удалено',
     too_fast: 'Не так быстро — подождите пару секунд', chat_closed: 'Общий чат закрыт администратором', blocked: 'Собеседник ограничил личные сообщения',
     no_msgs: 'Сообщений пока нет — напишите первым', call: 'Позвонить', plan: 'Запланировать встречу',
     call_invite: 'Звонок — нажмите на ссылку, чтобы присоединиться', call_join: 'Присоединиться', call_incoming: 'Входящий звонок',
     call_accept: 'Принять', call_decline: 'Отклонить', call_declined: 'Звонок отклонён', call_starting: 'Начинаю звонок…',
-    call_failed: 'Не удалось начать звонок', call_missed: 'Пропущенный звонок', call_title: 'Звонок · %s', leave: 'Завершить', new_tab: 'В новой вкладке',
+    call_failed: 'Не удалось начать звонок', call_missed: 'Пропущенный звонок', call_title: 'Звонок · %s', leave: 'Завершить', 
     meet_with: 'Встреча: %s', backlog_hint: 'Предложения и планы развития. Видно всем, кто вошёл.',
     company_hint: 'Видят только сотрудники @%s', general_hint: 'Все, кто вошёл в Production IT',
     save: 'Сохранить', saved: 'Сохранено', language: 'Язык', notifications: 'Уведомления', notif_on: 'Включить уведомления в браузере',
     notif_ok: 'Уведомления включены', notif_denied: 'Браузер запретил уведомления — разрешите их в настройках сайта', install: 'Установить приложение',
-    domain: 'Компания', online: 'в сети', guests_n: 'гостей: %s', open_calendar: 'Открыть календарь', back: 'Назад',
+    domain: 'Компания', online: 'в сети', guests_n: 'гостей: %s', back: 'Назад',
     login_again: 'Сессия завершена — войдите снова', email_hint: 'Адрес коллеги, например anna@company.com', meeting_soon: 'Встреча через %s мин',
     you: 'Вы',
   },
@@ -73,18 +78,23 @@ const T = {
     title: 'Title', date: 'Date', time: 'Time', minutes: 'Duration, min', guests: 'Guests — emails, comma separated', note: 'Note',
     create: 'Create and send', created: 'Meeting created, invitations sent', need_title: 'A title and at least one guest are required',
     today: 'Today', tomorrow: 'Tomorrow', yesterday: 'Yesterday', share_link: 'Link for guests', link_copied: 'Link copied', organizer: 'Organizer',
+    r_repeat: 'Repeat', r_none: 'Does not repeat', r_daily: 'Every day', r_weekdays: 'Every weekday', r_weekly: 'Every week', r_biweekly: 'Every two weeks', r_monthly: 'Every month',
+    r_until: 'Until (optional)', r_until_short: 'until %s', r_scope: 'Apply to', r_one: 'This meeting only', r_all: 'The whole series', r_bad_until: 'The end date is before the start',
+    r_confirm_one: 'Cancel this meeting only? Participants will be notified, other dates stay.', r_confirm_all: 'Cancel the whole series? Participants will be notified.',
+    cal_prev: 'Previous week', cal_next: 'Next week', participants: 'Participants', close: 'Close', edit_meeting: 'Edit', save: 'Save', saved: 'Saved, participants will get an email',
+    cancel_meeting: 'Cancel meeting', confirm_cancel: 'Cancel the meeting? Participants will be notified.', cancelled: 'Meeting cancelled', admin_note: 'You are an admin — that is the only reason you can see this meeting',
     cal_grid: 'Calendar', no_chats: 'No chats yet. Message a colleague by email.', pick_chat: 'Pick a chat on the left',
     message: 'Message…', send: 'Send', delete_q: 'Delete the message for everyone?', delete: 'Delete', deleted: 'Deleted',
     too_fast: 'Too fast — wait a couple of seconds', chat_closed: 'The team chat is closed by the admin', blocked: 'This person limited direct messages',
     no_msgs: 'No messages yet — say hi', call: 'Call', plan: 'Schedule a meeting',
     call_invite: 'Call — tap the link to join', call_join: 'Join the call', call_incoming: 'Incoming call',
     call_accept: 'Accept', call_decline: 'Decline', call_declined: 'Call declined', call_starting: 'Starting the call…',
-    call_failed: 'Could not start the call', call_missed: 'Missed call', call_title: 'Call · %s', leave: 'Leave', new_tab: 'Open in a new tab',
+    call_failed: 'Could not start the call', call_missed: 'Missed call', call_title: 'Call · %s', leave: 'Leave', 
     meet_with: 'Meeting: %s', backlog_hint: 'Ideas and roadmap. Visible to everyone signed in.',
     company_hint: 'Only people @%s can see it', general_hint: 'Everyone signed in to Production IT',
     save: 'Save', saved: 'Saved', language: 'Language', notifications: 'Notifications', notif_on: 'Enable browser notifications',
     notif_ok: 'Notifications are on', notif_denied: 'The browser blocked notifications — allow them in site settings', install: 'Install the app',
-    domain: 'Company', online: 'online', guests_n: 'guests: %s', open_calendar: 'Open the calendar', back: 'Back',
+    domain: 'Company', online: 'online', guests_n: 'guests: %s', back: 'Back',
     login_again: 'Session ended — please sign in again', email_hint: 'Colleague’s email, e.g. anna@company.com', meeting_soon: 'Meeting in %s min',
     you: 'You',
   },
@@ -97,7 +107,7 @@ const t = (k, ...a) => { let s = (T[LANG][k] ?? T.en[k] ?? k); a.forEach((v) => 
 const S = {
   uid: store.get('uid'), author: store.get('author'), email: store.get('email'), name: store.get('name'), domain: store.get('domain'),
   cfg: store.json('cfg', {}), names: store.json('names', {}),
-  threads: [], unread: 0, company: null, meetings: null, onlyMine: store.get('only_mine', '1') === '1',
+  threads: [], unread: 0, company: null, meetings: null, role: '', onlyMine: store.get('only_mine', '1') === '1',
   view: null, rt: null, rtOk: false, timer: 0, ringing: null, seenCalls: new Set(store.json('seen_calls', [])), notified: store.json('notified', {}),
 };
 
@@ -257,7 +267,7 @@ async function saveName(n) {
 }
 function logout(expired = false) {
   for (const k of ['uid', 'author', 'email', 'name', 'domain', 'cfg', 'names', 'seen_calls', 'notified']) store.del(k);
-  Object.assign(S, { uid: '', author: '', email: '', name: '', domain: '', threads: [], unread: 0, company: null, meetings: null, names: {} });
+  Object.assign(S, { uid: '', author: '', email: '', name: '', domain: '', threads: [], unread: 0, company: null, meetings: null, role: '', names: {} });
   clearInterval(S.timer); rtStop(); closeCall();
   showLogin();
   if (expired) toast(t('login_again'));
@@ -312,7 +322,8 @@ function route() {
       break;
     case 'meet':
       renderMeetings();
-      if (p[1] === 'cal') { renderCalendar(); setLayout(2, false); } else { meetPlaceholder(); setLayout(1, false); }
+      renderCalendar();   // на широком экране календарь всегда рядом со списком; на телефоне — отдельный экран #/meet/cal
+      setLayout(p[1] === 'cal' ? 2 : 1, false);
       break;
     case 'profile': renderProfile(); setLayout(2, true); break;
     case 'find': findDialog(); location.replace('#/' + (wide() ? 'chats' : '')); break;
@@ -613,86 +624,208 @@ async function renderTeam() {
 }
 
 // ---------- встречи ----------
+const RECURS = ['daily', 'weekdays', 'weekly', 'biweekly', 'monthly'];
+const meetEnd = (m) => new Date(new Date(m.start).getTime() + (m.minutes || 60) * 60000);
+const shownMeetings = () => (S.meetings || []).filter((m) => !S.role || !S.onlyMine || m.mine);
+const recurLabel = (m) => (m.recur ? `↻ ${t('r_' + m.recur)}${m.until ? ' ' + t('r_until_short', new Date(m.until + 'T12:00').toLocaleDateString(LANG)) : ''}` : '');
+function joinBtn(b) { b.onclick = (e) => { e.stopPropagation(); openCall(b.dataset.join, b.dataset.title); }; }
+async function loadMeetings() {
+  try { const r = await api('prodit_meetings'); S.meetings = r.items || []; S.role = r.role || ''; } catch (e) { S.meetings = S.meetings || []; toast(errText(e)); }
+}
 async function renderMeetings(reload = true) {
   const draw = () => {
     let body;
+    let list = [];
     if (!S.meetings) body = '<div class="empty">…</div>';
     else {
       const now = Date.now();
-      const list = S.meetings.filter((m) => (!S.onlyMine || m.mine) && new Date(m.start).getTime() + (m.minutes || 60) * 60000 > now - 3600000)
-        .sort((a, b) => new Date(a.start) - new Date(b.start));
+      const seen = new Set();   // от серии в списке — только ближайшая дата, все даты видны в календаре
+      list = shownMeetings().filter((m) => meetEnd(m).getTime() > now - 3600000).sort((a, b) => new Date(a.start) - new Date(b.start))
+        .filter((m) => { if (!m.recur) return true; if (seen.has(m.uid)) return false; seen.add(m.uid); return true; });
       if (!list.length) body = `<div class="empty"><span class="big">📅</span>${esc(t('no_meetings'))}</div>`;
       else {
         body = ''; let lastDay = '';
-        for (const m of list) {
-          const st = new Date(m.start), end = new Date(st.getTime() + (m.minutes || 60) * 60000);
+        list.forEach((m, i) => {
+          const st = new Date(m.start), end = meetEnd(m);
           if (st.toDateString() !== lastDay) { body += `<div class="sect">${esc(dayLabel(st))}</div>`; lastDay = st.toDateString(); }
           const live = now >= st.getTime() - 5 * 60000 && now <= end.getTime();
           const guests = (m.emails || []).length;
-          body += `<div class="meet"><div class="when">${esc(hm(st))}<small>${esc(hm(end))}</small></div>
+          body += `<div class="meet" data-open="${i}"><div class="when">${esc(hm(st))}<small>${esc(hm(end))}</small></div>
             <div class="tx"><div class="nm">${esc(m.title || '—')}</div><div class="sub">${esc(t('organizer'))}: ${esc(m.organizer || m.organizer_email || '—')}${guests ? ' · ' + esc(t('guests_n', guests)) : ''}</div>
-            ${live ? `<div class="live">● ${esc(t('now'))}</div>` : ''}</div>
+            ${m.recur ? `<div class="sub rep">${esc(recurLabel(m))}</div>` : ''}${m.admin_view ? `<div class="sub warn">${esc(t('admin_note'))}</div>` : ''}${live ? `<div class="live">● ${esc(t('now'))}</div>` : ''}</div>
             <div class="acts">${m.link ? `<button class="btn sm" data-join="${esc(m.link)}" data-title="${esc(m.title || '')}">${esc(t('join'))}</button>
             <button class="chip" data-copy="${esc(m.link)}" title="${esc(t('share_link'))}">🔗</button>` : ''}</div></div>`;
-        }
+        });
       }
     }
     const on = location.hash === '#/meet/cal';
     $('list').innerHTML = `<div class="head">${backBtn('#/')}<h2>${esc(t('meetings'))}</h2>
       <button class="icon-btn" id="mNew" title="${esc(t('new_meeting'))}" aria-label="${esc(t('new_meeting'))}">＋</button></div>
-      <div class="list-tools"><button class="chip ${S.onlyMine ? 'on' : ''}" data-f="1">${esc(t('only_mine'))}</button><button class="chip ${S.onlyMine ? '' : 'on'}" data-f="0">${esc(t('all'))}</button>
-      <a class="chip ${on ? 'on' : ''}" href="#/meet/cal" style="margin-left:auto">▦ ${esc(t('cal_grid'))}</a></div><div class="scroll">${body}</div>`;
+      <div class="list-tools ${S.role ? '' : 'phone-only'}">${S.role ? `<button class="chip ${S.onlyMine ? 'on' : ''}" data-f="1">${esc(t('only_mine'))}</button><button class="chip ${S.onlyMine ? '' : 'on'}" data-f="0">${esc(t('all'))}</button>` : ''}
+      <a class="chip cal-link ${on ? 'on' : ''}" href="#/meet/cal" style="margin-left:auto">▦ ${esc(t('cal_grid'))}</a></div><div class="scroll">${body}</div>`;
     $('mNew').onclick = () => meetingDialog({});
-    $('list').querySelectorAll('[data-f]').forEach((b) => { b.onclick = () => { S.onlyMine = b.dataset.f === '1'; store.set('only_mine', S.onlyMine ? '1' : '0'); draw(); }; });
-    $('list').querySelectorAll('[data-join]').forEach((b) => { b.onclick = () => openCall(b.dataset.join, b.dataset.title); });
-    $('list').querySelectorAll('[data-copy]').forEach((b) => { b.onclick = () => { navigator.clipboard?.writeText(b.dataset.copy).then(() => toast(t('link_copied')), () => prompt(t('share_link'), b.dataset.copy)); }; });
+    $('list').querySelectorAll('[data-f]').forEach((b) => { b.onclick = () => { S.onlyMine = b.dataset.f === '1'; store.set('only_mine', S.onlyMine ? '1' : '0'); draw(); drawCalendar(); }; });
+    $('list').querySelectorAll('[data-join]').forEach(joinBtn);
+    $('list').querySelectorAll('[data-open]').forEach((r) => { r.onclick = () => meetingView(list[+r.dataset.open]); });
+    $('list').querySelectorAll('[data-copy]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); copyLink(b.dataset.copy); }; });
   };
   draw();
   if (!reload) return;
-  try { S.meetings = (await api('prodit_meetings')).items || []; } catch (e) { S.meetings = S.meetings || []; toast(errText(e)); }
-  if (location.hash.startsWith('#/meet')) draw();
+  await loadMeetings();
+  if (location.hash.startsWith('#/meet')) { draw(); drawCalendar(); }
 }
-function meetPlaceholder() {
-  $('main').innerHTML = `<div class="placeholder"><div><span class="logo">Production IT</span><div style="font-size:40px;margin:14px 0">📅</div>
-    <p>${esc(t('meetings_sub'))}</p><div class="row center"><a class="btn" href="#/meet/cal">▦ ${esc(t('open_calendar'))}</a>
-    <button class="btn ghost" id="phNew">＋ ${esc(t('new_meeting'))}</button></div></div></div>`;
-  $('phNew').onclick = () => meetingDialog({});
-}
+function copyLink(link) { navigator.clipboard?.writeText(link).then(() => toast(t('link_copied')), () => prompt(t('share_link'), link)); }
+
+// календарь: на широком экране неделя, на телефоне — день (вкладки дней), как у встреч в списке — данные prodit_meetings
+const CAL_HOUR = 48;   // высота часа, px
+const startOfWeek = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+const CAL = { week: startOfWeek(new Date()), day: (new Date().getDay() + 6) % 7, scrolled: false };
 function renderCalendar() {
-  $('main').innerHTML = `<div class="head">${backBtn('#/meet')}<h2>${esc(t('cal_grid'))}</h2>
-    <a class="chip" href="/meet/" target="_blank" rel="noopener">${esc(t('new_tab'))}</a></div>
-    <iframe class="frame" src="/meet/" title="${esc(t('cal_grid'))}"></iframe>`;
+  CAL.scrolled = false;
+  $('main').innerHTML = `<div class="head cal-head">${backBtn('#/meet')}<h2 id="calRange"></h2>
+    <button class="icon-btn" id="calPrev" aria-label="${esc(t('cal_prev'))}">‹</button>
+    <button class="chip" id="calToday">${esc(t('today'))}</button>
+    <button class="icon-btn" id="calNext" aria-label="${esc(t('cal_next'))}">›</button>
+    <button class="icon-btn" id="calNew" title="${esc(t('new_meeting'))}" aria-label="${esc(t('new_meeting'))}">＋</button></div>
+    <div class="cal-days" id="calDays"></div><div class="cal-scroll" id="calScroll"></div>`;
+  const go = (dd) => { CAL.week = new Date(CAL.week.getFullYear(), CAL.week.getMonth(), CAL.week.getDate() + dd); drawCalendar(); };
+  $('calPrev').onclick = () => go(-7);
+  $('calNext').onclick = () => go(7);
+  $('calToday').onclick = () => { CAL.week = startOfWeek(new Date()); CAL.day = (new Date().getDay() + 6) % 7; CAL.scrolled = false; drawCalendar(); };
+  $('calNew').onclick = () => meetingDialog({});
+  drawCalendar();
 }
-function meetingDialog({ withAuthor = '', withName = '' }) {
-  const d = new Date(Date.now() + 60 * 60000); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0);
+/** Раскладка дня: пересекающиеся встречи — рядом, каждая в своей дорожке. */
+function layDay(items) {
+  const out = []; let group = [], groupEnd = 0;
+  const flush = () => {
+    const lanes = [];
+    for (const e of group) { let i = lanes.findIndex((x) => x <= e.s); if (i < 0) { i = lanes.length; lanes.push(0); } lanes[i] = e.e; e.lane = i; }
+    group.forEach((e) => { e.lanes = lanes.length; out.push(e); }); group = [];
+  };
+  items.sort((a, b) => a.s - b.s).forEach((e) => { if (group.length && e.s >= groupEnd) { flush(); groupEnd = 0; } group.push(e); groupEnd = Math.max(groupEnd, e.e); });
+  flush();
+  return out;
+}
+function drawCalendar() {
+  const scroll = $('calScroll');
+  if (!scroll) return;
+  const now = new Date();
+  const days = Array.from({ length: 7 }, (_, i) => new Date(CAL.week.getFullYear(), CAL.week.getMonth(), CAL.week.getDate() + i));
+  const fmt = (d, o) => d.toLocaleDateString(LANG, o);
+  $('calRange').textContent = wide() ? `${fmt(days[0], { day: 'numeric', month: 'short' })} — ${fmt(days[6], { day: 'numeric', month: 'short', year: 'numeric' })}`
+    : days[0].getMonth() === days[6].getMonth() ? `${days[0].getDate()}–${fmt(days[6], { day: 'numeric', month: 'short' })}` : `${days[0].getDate()}.${days[0].getMonth() + 1}–${days[6].getDate()}.${days[6].getMonth() + 1}`;
+  $('calDays').innerHTML = '<span class="cal-gut"></span>' + days.map((d, i) => `<button class="cal-day ${d.toDateString() === now.toDateString() ? 'today' : ''} ${i === CAL.day ? 'on' : ''}" data-i="${i}">
+    ${esc(fmt(d, { weekday: 'short' }))}<b>${d.getDate()}</b></button>`).join('');
+  $('calDays').querySelectorAll('[data-i]').forEach((b) => { b.onclick = () => { CAL.day = +b.dataset.i; drawCalendar(); }; });
+  const items = shownMeetings();
+  const hours = Array.from({ length: 24 }, (_, h) => `<div class="cal-hour">${h ? String(h).padStart(2, '0') + ':00' : ''}</div>`).join('');
+  const nowTop = (now.getHours() + now.getMinutes() / 60) * CAL_HOUR;
+  const shown = [];
+  const cols = days.map((d, i) => {
+    const today = d.toDateString() === now.toDateString();
+    const list = items.filter((m) => new Date(m.start).toDateString() === d.toDateString()).map((m) => {
+      const st = new Date(m.start), s = st.getHours() * 60 + st.getMinutes();
+      return { m, s, e: Math.min(1440, s + (m.minutes || 60)) };
+    });
+    const evs = layDay(list).map((e) => {
+      const idx = shown.push(e.m) - 1;
+      const past = meetEnd(e.m) < now;
+      return `<button class="cal-ev ${past ? 'past' : ''} ${e.e - e.s < 45 ? 'short' : ''}" data-ev="${idx}" style="top:${e.s / 60 * CAL_HOUR}px;height:${Math.max(22, (e.e - e.s) / 60 * CAL_HOUR - 2)}px;left:calc(${e.lane / e.lanes * 100}% + 2px);width:calc(${100 / e.lanes}% - 4px)">
+        <b>${e.m.recur ? '↻ ' : ''}${esc(e.m.title || '—')}</b><span>${esc(hm(e.m.start))}</span></button>`;
+    }).join('');
+    return `<div class="cal-col ${i === CAL.day ? 'on' : ''}" data-col="${i}" style="height:${24 * CAL_HOUR}px">${evs}${today ? `<i class="cal-now" style="top:${nowTop}px"></i>` : ''}</div>`;
+  }).join('');
+  const keep = scroll.scrollTop;
+  scroll.innerHTML = `<div class="cal-grid"><div class="cal-hours">${hours}</div>${cols}</div>`;
+  scroll.scrollTop = keep;
+  if (!CAL.scrolled) { scroll.scrollTop = Math.max(0, (Math.min(now.getHours(), 18) - 1)) * CAL_HOUR; if (now.getHours() < 9) scroll.scrollTop = 7 * CAL_HOUR; CAL.scrolled = true; }
+  scroll.querySelectorAll('[data-ev]').forEach((b) => { b.onclick = (e) => { e.stopPropagation(); meetingView(shown[+b.dataset.ev]); }; });
+  scroll.querySelectorAll('[data-col]').forEach((c) => {
+    c.onclick = (e) => {   // свободное время → новая встреча на это время (с шагом 30 минут)
+      const min = Math.floor((e.clientY - c.getBoundingClientRect().top) / CAL_HOUR * 2) * 30;
+      const when = new Date(days[+c.dataset.col]); when.setHours(0, min, 0, 0);
+      if (when > now) meetingDialog({ when });
+    };
+  });
+}
+function meetingView(m) {
+  const st = new Date(m.start), end = meetEnd(m);
+  const live = Date.now() >= st.getTime() - 5 * 60000 && Date.now() <= end.getTime();
+  const guests = (m.emails || []).filter((e) => e.toLowerCase() !== (m.organizer_email || '').toLowerCase());
+  modal(`<h3>${esc(m.title || '—')}</h3>
+    <p class="meet-when">${esc(st.toLocaleDateString(LANG, { weekday: 'long', day: 'numeric', month: 'long' }))}, ${esc(hm(st))} – ${esc(hm(end))}${live ? ` <span class="live">● ${esc(t('now'))}</span>` : ''}</p>
+    ${m.recur ? `<p class="sub rep">${esc(recurLabel(m))}</p>` : ''}${m.admin_view ? `<p class="sub warn">${esc(t('admin_note'))}</p>` : ''}
+    <dl class="kv"><dt>${esc(t('organizer'))}</dt><dd>${esc(m.organizer || m.organizer_email || '—')}</dd>
+    ${guests.length ? `<dt>${esc(t('participants'))}</dt><dd>${guests.map(esc).join(', ')}</dd>` : ''}${m.note ? `<dt>${esc(t('note'))}</dt><dd>${esc(m.note)}</dd>` : ''}</dl>
+    <div class="acts view-acts"><button class="btn ghost" data-a="no">${esc(t('close'))}</button>
+    ${m.can_edit ? `<button class="btn ghost" data-a="edit">${esc(t('edit_meeting'))}</button>` : ''}
+    <button class="btn ghost" data-a="copy">🔗 ${esc(t('share_link'))}</button>
+    <button class="btn" data-a="join" autofocus>${esc(t('join'))}</button></div>`, (c, close) => {
+    c.querySelector('[data-a=no]').onclick = close;
+    c.querySelector('[data-a=copy]').onclick = () => copyLink(m.link);
+    c.querySelector('[data-a=join]').onclick = () => { close(); openCall(m.link, m.title); };
+    const e = c.querySelector('[data-a=edit]');
+    if (e) e.onclick = () => { close(); meetingDialog({ edit: m }); };
+  });
+}
+function meetingDialog({ withAuthor = '', withName = '', when = null, edit = null }) {
+  let d = when;
+  if (edit) d = new Date(edit.start);
+  if (!d) { d = new Date(Date.now() + 60 * 60000); d.setMinutes(d.getMinutes() < 30 ? 30 : 60, 0, 0); }
   const pad = (n) => String(n).padStart(2, '0');
   const dv = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`, tv = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  modal(`<h3>${esc(withName ? t('meet_with', withName) : t('new_meeting'))}</h3>
-    <form id="mF" novalidate><label>${esc(t('title'))}<input id="mT" maxlength="120" autofocus value="${esc(withName ? t('meet_with', withName) : '')}"></label>
+  const head = edit ? t('edit_meeting') : withName ? t('meet_with', withName) : t('new_meeting');
+  const series = !!(edit && edit.recur);
+  const guests0 = edit ? (edit.emails || []).filter((e) => e.toLowerCase() !== (edit.organizer_email || '').toLowerCase()).join(', ') : '';
+  modal(`<h3>${esc(head)}</h3>${edit && edit.admin_view ? `<p class="sub warn">${esc(t('admin_note'))}</p>` : ''}
+    <form id="mF" novalidate>${series ? `<label>${esc(t('r_scope'))}<select id="mS"><option value="one">${esc(t('r_one'))}</option><option value="all">${esc(t('r_all'))}</option></select></label>` : ''}
+    <label>${esc(t('title'))}<input id="mT" maxlength="120" autofocus value="${esc(edit ? edit.title : withName ? t('meet_with', withName) : '')}"></label>
     <div class="grid2"><label>${esc(t('date'))}<input id="mD" type="date" value="${dv}"></label><label>${esc(t('time'))}<input id="mH" type="time" value="${tv}" step="300"></label></div>
-    <label>${esc(t('minutes'))}<input id="mM" type="number" min="15" max="480" step="15" value="60"></label>
-    ${withAuthor ? '' : `<label>${esc(t('guests'))}<input id="mG" type="text" inputmode="email" placeholder="anna@company.com, ivan@company.com"></label>`}
-    <label>${esc(t('note'))}<textarea id="mN" rows="2" maxlength="500"></textarea></label>
-    <p class="err" id="mErr"></p><div class="acts"><button type="button" class="btn ghost" data-a="no">${esc(t('cancel'))}</button><button class="btn" id="mGo">${esc(t('create'))}</button></div></form>`, (c, close) => {
+    <label>${esc(t('minutes'))}<input id="mM" type="number" min="15" max="480" step="15" value="${edit ? edit.minutes : 60}"></label>
+    <div class="grid2" id="mRec"><label>${esc(t('r_repeat'))}<select id="mR"><option value="">${esc(t('r_none'))}</option>${RECURS.map((r) => `<option value="${r}" ${edit && edit.recur === r ? 'selected' : ''}>${esc(t('r_' + r))}</option>`).join('')}</select></label>
+    <label id="mUL">${esc(t('r_until'))}<input id="mU" type="date" value="${edit && edit.until ? esc(edit.until) : ''}"></label></div>
+    ${withAuthor ? '' : `<label>${esc(t('guests'))}<input id="mG" type="text" inputmode="email" placeholder="anna@company.com, ivan@company.com" value="${esc(guests0)}"></label>`}
+    <label>${esc(t('note'))}<textarea id="mN" rows="2" maxlength="500">${esc(edit ? edit.note || '' : '')}</textarea></label>
+    <p class="err" id="mErr"></p><div class="acts">${edit ? `<button type="button" class="btn danger" data-a="drop">${esc(t('cancel_meeting'))}</button>` : ''}
+    <button type="button" class="btn ghost" data-a="no">${esc(t('cancel'))}</button><button class="btn" id="mGo">${esc(edit ? t('save') : t('create'))}</button></div></form>`, (c, close) => {
     c.querySelector('[data-a=no]').onclick = close;
-    c.querySelector('#mF').onsubmit = async (e) => {
+    const q = (s) => c.querySelector(s);
+    const oneOnly = () => series && q('#mS').value === 'one';
+    const sync = () => { q('#mRec').hidden = oneOnly(); q('#mUL').style.visibility = q('#mR').value ? '' : 'hidden'; };
+    q('#mR').onchange = sync;
+    if (series) q('#mS').onchange = sync;
+    sync();
+    const scopeBody = () => (series ? { occurrence: edit.start, scope: q('#mS').value } : {});
+    const fail = (er) => { const m = er.code || ''; return m === 'bad until' ? t('r_bad_until') : m && m !== 'meet api' ? m : errText(er); };
+    const drop = q('[data-a=drop]');
+    if (drop) drop.onclick = async () => {
+      const body = { uid: edit.uid, cancel: true, ...scopeBody() };
+      const msg = !series ? t('confirm_cancel') : oneOnly() ? t('r_confirm_one') : t('r_confirm_all');
+      close();
+      if (!(await confirmBox(msg, t('cancel_meeting'), true))) return;
+      try { await api('prodit_meet_edit', { body }); toast(t('cancelled')); renderMeetings(); } catch (er) { toast(fail(er)); }
+    };
+    q('#mF').onsubmit = async (e) => {
       e.preventDefault();
-      const title = c.querySelector('#mT').value.trim();
-      const emails = withAuthor ? [] : c.querySelector('#mG').value.split(/[\s,;]+/).map((s) => s.trim().toLowerCase()).filter((s) => s.includes('@'));
-      const err = c.querySelector('#mErr');
-      if (!title || (!withAuthor && !emails.length)) { err.textContent = t('need_title'); return; }
-      const when = new Date(`${c.querySelector('#mD').value}T${c.querySelector('#mH').value || '10:00'}:00`);
-      if (isNaN(when)) { err.textContent = t('date'); return; }
-      const off = -when.getTimezoneOffset(), sign = off >= 0 ? '+' : '-', a = Math.abs(off);
-      const start = `${c.querySelector('#mD').value}T${c.querySelector('#mH').value}:00${sign}${pad(Math.floor(a / 60))}:${pad(a % 60)}`;
-      c.querySelector('#mGo').disabled = true;
+      const title = q('#mT').value.trim();
+      const emails = withAuthor ? [] : q('#mG').value.split(/[\s,;]+/).map((s) => s.trim().toLowerCase()).filter((s) => s.includes('@'));
+      const err = q('#mErr');
+      if (!title || (!withAuthor && !edit && !emails.length)) { err.textContent = t('need_title'); return; }
+      const w = new Date(`${q('#mD').value}T${q('#mH').value || '10:00'}:00`);
+      if (isNaN(w)) { err.textContent = t('date'); return; }
+      const off = -w.getTimezoneOffset(), sign = off >= 0 ? '+' : '-', a = Math.abs(off);
+      const start = `${q('#mD').value}T${q('#mH').value}:00${sign}${pad(Math.floor(a / 60))}:${pad(a % 60)}`;
+      const body = { title, start, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Moscow',
+        duration: Math.max(15, parseInt(q('#mM').value, 10) || 60), emails, note: q('#mN').value.trim(), lang: LANG, ...scopeBody(),
+        ...(oneOnly() ? {} : { recur: q('#mR').value, until: q('#mR').value ? q('#mU').value : '' }) };
+      q('#mGo').disabled = true;
       try {
-        await api('prodit_meet_create', { body: { title, start, tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Moscow',
-          duration: Math.max(15, parseInt(c.querySelector('#mM').value, 10) || 60), emails, note: c.querySelector('#mN').value.trim(), lang: LANG,
-          ...(withAuthor ? { with: withAuthor } : {}) } });
-        close(); toast(t('created'));
+        if (edit) await api('prodit_meet_edit', { body: { ...body, uid: edit.uid } });
+        else await api('prodit_meet_create', { body: { ...body, ...(withAuthor ? { with: withAuthor } : {}) } });
+        close(); toast(t(edit ? 'saved' : 'created'));
         if (location.hash.startsWith('#/meet')) renderMeetings();
-      } catch (er) { c.querySelector('#mGo').disabled = false; err.textContent = er.code && er.code !== 'meet api' ? er.code : errText(er); }
+      } catch (er) { q('#mGo').disabled = false; err.textContent = fail(er); }
     };
   });
 }

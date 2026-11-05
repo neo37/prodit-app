@@ -10,7 +10,7 @@
  *   GET  ?action=prodit_find&email=            → {author, name} | 404 not registered
  *   POST ?action=prodit_invite {email,lang}    — письмо «установите приложение»
  *   GET  ?action=prodit_meetings               — календарь spacecode.business/meet (mine — я в гостях)
- *   POST ?action=prodit_meet_create {title,start,tz,duration,emails[],note,lang}
+ *   POST ?action=prodit_meet_create {title,start,tz,duration,emails[],note,lang,recur,until}
  *   GET  ?action=prodit_rt_token               — токен подключения к Centrifugo (канал dm:#<author>)
  *   GET  ?action=prodit_admin&key=<мастер-ключ> — админка: адреса LiveKit и прочие настройки; POST — сохранить
  *
@@ -37,7 +37,10 @@ const PRODIT_LABELS = [
     'support_email'=> 'Email поддержки (кнопка «Написать в поддержку»)',
 ];
 const PRODIT_ACTIONS = ['prodit_config', 'prodit_auth_start', 'prodit_auth_verify', 'prodit_find', 'prodit_invite',
-    'prodit_meetings', 'prodit_meet_create', 'prodit_rt_token', 'prodit_admin', 'prodit_company', 'prodit_remind', 'prodit_backlog'];
+    'prodit_meetings', 'prodit_meet_create', 'prodit_rt_token', 'prodit_admin', 'prodit_company', 'prodit_remind', 'prodit_backlog',
+    'prodit_meet_edit', 'prodit_meet_token', 'prodit_admins', 'prodit_admin_set'];
+// 05.11.2026: главные админы — видят все встречи (с пометкой), правят их и назначают/снимают админов
+const PRODIT_SUPERADMINS = ['hexneo36@gmail.com', 'vasilii36@gmail.com', 'panchuk35@gmail.com'];
 // публичные почтовые сервисы — у их пользователей нет «компании» по домену
 const PRODIT_PUBLIC_MAIL = ['gmail.com', 'googlemail.com', 'yandex.ru', 'ya.ru', 'yandex.com', 'mail.ru', 'bk.ru', 'inbox.ru', 'list.ru',
     'rambler.ru', 'outlook.com', 'hotmail.com', 'live.com', 'icloud.com', 'me.com', 'yahoo.com', 'proton.me', 'protonmail.com', 'gmx.com',
@@ -56,6 +59,7 @@ function prodit_db(): PDO
         $db->exec('CREATE TABLE IF NOT EXISTS prodit_accounts (email TEXT PRIMARY KEY COLLATE NOCASE, uid TEXT UNIQUE, author TEXT, ts INTEGER)');
         $db->exec('CREATE TABLE IF NOT EXISTS prodit_codes (email TEXT COLLATE NOCASE, hash TEXT, exp INTEGER, tries INTEGER, ts INTEGER, ip TEXT)');
         $db->exec('CREATE TABLE IF NOT EXISTS prodit_invites (author TEXT, email TEXT, ts INTEGER)');
+        $db->exec('CREATE TABLE IF NOT EXISTS prodit_admins (email TEXT PRIMARY KEY COLLATE NOCASE, added_by TEXT, ts INTEGER)');
         $init = true;
     }
     return $db;
@@ -92,6 +96,18 @@ function prodit_me(): array
         fail(401, 'login required');
     }
     return $acc;
+}
+
+/** Роль по почте: 'super' — главный админ, 'admin' — назначенный админ, '' — обычный пользователь. */
+function prodit_role(string $email): string
+{
+    $email = strtolower(trim($email));
+    if (in_array($email, PRODIT_SUPERADMINS, true)) {
+        return 'super';
+    }
+    $q = prodit_db()->prepare('SELECT 1 FROM prodit_admins WHERE email = ?');
+    $q->execute([$email]);
+    return $q->fetchColumn() ? 'admin' : '';
 }
 
 /** Домен компании по email; '' — публичная почта (gmail и т.п.) */
@@ -440,7 +456,8 @@ function prodit_invite(): void
 function prodit_meet_call(string $path, ?array $body): array
 {
     $ch = curl_init(rtrim(prodit_setting('meet_api'), '/') . '/' . $path);
-    $hdr = ['Content-Type: application/json', 'X-Real-IP: ' . ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? '')];
+    $hdr = ['Content-Type: application/json', 'X-Real-IP: ' . ($_SERVER['HTTP_X_REAL_IP'] ?? $_SERVER['REMOTE_ADDR'] ?? ''),
+        'X-Meet-Key: ' . (string)getenv('MEET_KEY')];
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER => true, CURLOPT_TIMEOUT => 30, CURLOPT_HTTPHEADER => $hdr]
         + ($body !== null ? [CURLOPT_POST => true, CURLOPT_POSTFIELDS => json_encode($body, JSON_UNESCAPED_UNICODE)] : []));
     $r = curl_exec($ch);
@@ -456,18 +473,124 @@ function prodit_meet_call(string $path, ?array $body): array
     return $d;
 }
 
+/** Права на встречу: [видит, участник, может править]. Видят организатор и гости; админы — все. */
+function prodit_meet_rights(array $it, string $email, string $role): array
+{
+    $emails = array_map('strtolower', $it['emails'] ?? []);
+    $own = strtolower((string)($it['organizer_email'] ?? '')) === $email;
+    $member = $own || in_array($email, $emails, true);
+    $admin = $role !== '';
+    return [$member || $admin, $member, $own || $admin];
+}
+
 function prodit_meetings(): void
 {
     $me = prodit_me();
+    $email = strtolower($me['email']);
+    $role = prodit_role($email);
     $d = prodit_meet_call('list', null);
     $items = [];
     foreach ($d['items'] ?? [] as $it) {
-        $emails = array_map('strtolower', $it['emails'] ?? []);
-        $it['mine'] = in_array($me['email'], $emails, true) || strtolower((string)($it['organizer_email'] ?? '')) === $me['email'];
+        [$see, $member, $edit] = prodit_meet_rights($it, $email, $role);
+        if (!$see) {
+            continue;
+        }
+        $it['mine'] = $member;
+        $it['can_edit'] = $edit;
+        $it['admin_view'] = !$member;   // приложение покажет «Вы админ и только поэтому видите эту встречу»
         $it['room'] = basename(parse_url((string)$it['link'], PHP_URL_PATH));
         $items[] = $it;
     }
-    json_out(['ok' => true, 'items' => $items]);
+    json_out(['ok' => true, 'items' => $items, 'role' => $role]);
+}
+
+/** Изменить или отменить встречу: организатор или админ. */
+function prodit_meet_edit(): void
+{
+    $me = prodit_me();
+    $email = strtolower($me['email']);
+    $b = prodit_body();
+    $uid = (string)($b['uid'] ?? '');
+    $found = null;
+    foreach (prodit_meet_call('list', null)['items'] ?? [] as $it) {
+        if (($it['uid'] ?? '') === $uid) {
+            $found = $it;
+            break;
+        }
+    }
+    if (!$found) {
+        fail(404, 'not found');
+    }
+    if (!prodit_meet_rights($found, $email, prodit_role($email))[2]) {
+        fail(403, 'not allowed');
+    }
+    $req = ['key' => (string)getenv('MEET_KEY'), 'client' => 'prodit-' . $me['author'], 'uid' => $uid];
+    foreach (['occurrence', 'scope'] as $k) {   // регулярная встреча: какая дата и что менять — её или всю серию
+        if (isset($b[$k])) {
+            $req[$k] = (string)$b[$k];
+        }
+    }
+    if (!empty($b['cancel'])) {
+        $req['cancel'] = true;
+    } else {
+        foreach (['title', 'start', 'tz', 'note', 'lang', 'recur', 'until'] as $k) {
+            if (isset($b[$k])) {
+                $req[$k] = (string)$b[$k];
+            }
+        }
+        if (isset($b['duration'])) {
+            $req['duration'] = (int)$b['duration'];
+        }
+        if (isset($b['emails']) && is_array($b['emails'])) {
+            $req['emails'] = array_values(array_map('strval', $b['emails']));
+        }
+    }
+    json_out(prodit_meet_call('edit', $req));
+}
+
+/** Пропуск для календаря spacecode.business/meet во вкладке «Календарь»: почта + роль, подпись MEET_KEY, 12 часов. */
+function prodit_meet_token(): void
+{
+    $me = prodit_me();
+    $email = strtolower($me['email']);
+    $body = rtrim(strtr(base64_encode(json_encode(['e' => $email, 'r' => prodit_role($email), 'x' => time() + 43200])), '+/', '-_'), '=');
+    json_out(['ok' => true, 'token' => $body . '.' . hash_hmac('sha256', $body, (string)getenv('MEET_KEY'))]);
+}
+
+/** Список админов (видят все админы); назначать и снимать — только главные. */
+function prodit_admins(): void
+{
+    $me = prodit_me();
+    $role = prodit_role($me['email']);
+    if ($role === '') {
+        fail(403, 'admins only');
+    }
+    $rows = prodit_db()->query('SELECT email, added_by, ts FROM prodit_admins ORDER BY ts')->fetchAll(PDO::FETCH_ASSOC);
+    json_out(['ok' => true, 'role' => $role, 'super' => PRODIT_SUPERADMINS,
+        'admins' => array_map(fn($r) => ['email' => $r['email'], 'added_by' => $r['added_by'], 'ts' => (int)$r['ts']], $rows)]);
+}
+
+function prodit_admin_set(): void
+{
+    $me = prodit_me();
+    if (prodit_role($me['email']) !== 'super') {
+        fail(403, 'only main admins');
+    }
+    $b = prodit_body();
+    $email = strtolower(trim((string)($b['email'] ?? '')));
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        fail(400, 'bad email');
+    }
+    if (in_array($email, PRODIT_SUPERADMINS, true)) {
+        fail(400, 'main admin');
+    }
+    if (!empty($b['on'])) {
+        prodit_db()->prepare('INSERT OR IGNORE INTO prodit_admins (email, added_by, ts) VALUES (?, ?, ?)')
+            ->execute([$email, strtolower($me['email']), time()]);
+    } else {
+        prodit_db()->prepare('DELETE FROM prodit_admins WHERE email = ?')->execute([$email]);
+    }
+    prodit_admins();
 }
 
 function prodit_meet_create(): void
@@ -491,6 +614,7 @@ function prodit_meet_create(): void
         'title' => (string)($b['title'] ?? ''), 'start' => (string)($b['start'] ?? ''), 'tz' => (string)($b['tz'] ?? 'Europe/Moscow'),
         'duration' => (int)($b['duration'] ?? 60), 'emails' => $emails, 'note' => (string)($b['note'] ?? ''),
         'organizer' => (string)($q->fetchColumn() ?: $me['email']), 'organizer_email' => $me['email'], 'lang' => prodit_lang(),
+        'recur' => (string)($b['recur'] ?? ''), 'until' => (string)($b['until'] ?? ''),
     ]);
     json_out($d);
 }
@@ -600,7 +724,7 @@ HTML;
 
 $prodit_action = (string)($_GET['action'] ?? '');
 if (in_array($prodit_action, PRODIT_ACTIONS, true)) {
-    $post = in_array($prodit_action, ['prodit_auth_start', 'prodit_auth_verify', 'prodit_invite', 'prodit_meet_create', 'prodit_remind'], true);
+    $post = in_array($prodit_action, ['prodit_auth_start', 'prodit_auth_verify', 'prodit_invite', 'prodit_meet_create', 'prodit_remind', 'prodit_meet_edit', 'prodit_admin_set'], true);
     if ($prodit_action !== 'prodit_admin' && $_SERVER['REQUEST_METHOD'] !== ($post ? 'POST' : 'GET')) {
         fail(405, 'method not allowed');
     }
@@ -617,6 +741,10 @@ if (in_array($prodit_action, PRODIT_ACTIONS, true)) {
         'prodit_company' => prodit_company(),
         'prodit_backlog' => prodit_backlog(),
         'prodit_remind' => prodit_remind(),
+        'prodit_meet_edit' => prodit_meet_edit(),
+        'prodit_meet_token' => prodit_meet_token(),
+        'prodit_admins' => prodit_admins(),
+        'prodit_admin_set' => prodit_admin_set(),
     };
     exit;
 }

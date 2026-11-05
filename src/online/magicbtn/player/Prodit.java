@@ -194,6 +194,50 @@ final class Prodit {
         s("tomorrow", "Завтра", "Tomorrow", "Сутра");
         s("share_link", "Ссылка для гостей", "Link for guests", "Линк за госте");
         s("organizer", "Организатор", "Organizer", "Организатор");
+        // 1.5: регулярные встречи и календарь
+        s("r_repeat", "Повтор", "Repeat", "Понављање");
+        s("r_none", "Не повторять", "Does not repeat", "Не понавља се");
+        s("r_daily", "Каждый день", "Every day", "Сваког дана");
+        s("r_weekdays", "По будням", "Every weekday", "Радним данима");
+        s("r_weekly", "Каждую неделю", "Every week", "Сваке недеље");
+        s("r_biweekly", "Раз в две недели", "Every two weeks", "На две недеље");
+        s("r_monthly", "Каждый месяц", "Every month", "Сваког месеца");
+        s("r_until", "До даты", "Until", "До датума");
+        s("r_until_short", "до %s", "until %s", "до %s");
+        s("r_no_end", "Без конца", "No end", "Без краја");
+        s("r_scope", "Что изменить", "Apply to", "Шта променити");
+        s("r_one", "Только эту встречу", "This meeting only", "Само овај састанак");
+        s("r_all", "Всю серию", "The whole series", "Целу серију");
+        s("r_bad_until", "Дата окончания раньше начала", "The end date is before the start", "Датум краја је пре почетка");
+        s("r_confirm_one", "Отменить только эту встречу? Участники получат уведомление, остальные даты серии останутся.",
+                "Cancel this meeting only? Participants will be notified, other dates stay.",
+                "Отказати само овај састанак? Учесници ће добити обавештење, остали датуми остају.");
+        s("r_confirm_all", "Отменить всю серию встреч? Участники получат уведомление.", "Cancel the whole series? Participants will be notified.",
+                "Отказати целу серију? Учесници ће добити обавештење.");
+        s("participants", "Участники", "Participants", "Учесници");
+        s("close", "Закрыть", "Close", "Затвори");
+        s("edit", "Изменить", "Edit", "Измени");
+        // 1.3: админы встреч
+        s("admin_note", "Вы админ и только поэтому видите эту встречу", "You are an admin — that is the only reason you can see this meeting",
+                "Ви сте админ и само зато видите овај састанак");
+        s("edit_meeting", "Изменить встречу", "Edit meeting", "Измени састанак");
+        s("save", "Сохранить", "Save", "Сачувај");
+        s("saved", "Изменения сохранены, участники получат письмо", "Saved, participants will get an email", "Сачувано, учесници ће добити имејл");
+        s("cancel_meeting", "Отменить встречу", "Cancel meeting", "Откажи састанак");
+        s("confirm_cancel", "Отменить встречу? Участники получат уведомление.", "Cancel the meeting? Participants will be notified.",
+                "Отказати састанак? Учесници ће добити обавештење.");
+        s("cancelled", "Встреча отменена", "Meeting cancelled", "Састанак је отказан");
+        s("admins", "Админы", "Admins", "Админи");
+        s("main_admins", "Главные админы", "Main admins", "Главни админи");
+        s("add_admin", "Добавить админа", "Add admin", "Додај админа");
+        s("admin_email", "Email нового админа", "New admin's email", "Email новог админа");
+        s("remove_admin", "Снять админа %s?", "Remove admin %s?", "Уклонити админа %s?");
+        s("no_admins", "Назначенных админов пока нет", "No appointed admins yet", "Још нема постављених админа");
+        s("admins_hint", "Админы видят все встречи и могут их редактировать. Назначать и снимать админов могут только главные.",
+                "Admins see all meetings and can edit them. Only main admins can add or remove admins.",
+                "Админи виде све састанке и могу да их мењају. Постављају и уклањају админе само главни.");
+        s("remove", "Снять", "Remove", "Уклони");
+        s("add", "Добавить", "Add", "Додај");
     }
 
     static String t(String k, Object... args) {

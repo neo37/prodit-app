@@ -53,6 +53,8 @@ def smtp_server():
 
 
 created = []
+edits = []
+list_keys = []
 
 
 class Fake(BaseHTTPRequestHandler):
@@ -62,6 +64,7 @@ class Fake(BaseHTTPRequestHandler):
 
     def do_GET(self):
         if self.path.startswith('/meet/api/list'):
+            list_keys.append(self.headers.get('X-Meet-Key'))
             return self._out({'ok': True, 'items': [
                 {'uid': '1', 'title': 'Планёрка', 'start': '2026-11-04T09:00:00+00:00', 'minutes': 30, 'organizer': 'X',
                  'organizer_email': 'boss@example.com', 'emails': ['A@example.com', 'boss@example.com'], 'link': 'https://efir.umno.cloud/rooms/productionit-plan-1'},
@@ -73,7 +76,11 @@ class Fake(BaseHTTPRequestHandler):
 
     def do_POST(self):
         n = int(self.headers.get('Content-Length') or 0)
-        created.append(json.loads(self.rfile.read(n)))
+        d = json.loads(self.rfile.read(n))
+        if self.path.startswith('/meet/api/edit'):
+            edits.append(d)
+            return self._out({'ok': True, 'uid': d.get('uid'), 'link': 'https://efir.umno.cloud/rooms/x'})
+        created.append(d)
         self._out({'ok': True, 'room': 'productionit-new-1', 'link': 'https://efir.umno.cloud/rooms/productionit-new-1'})
 
     def log_message(self, *a):
@@ -228,9 +235,58 @@ def main():
         print('встречи и Centrifugo')
         s, o = call('prodit_meetings', uid=UA)
         items = {i['title']: i for i in o.get('items', [])}
-        check('встречи из календаря', s == 200 and len(items) == 2)
-        check('моя встреча отмечена', items.get('Планёрка', {}).get('mine') is True and items.get('Чужая', {}).get('mine') is False)
+        check('сервер ходит в календарь с ключом', list_keys and list_keys[-1] == 'mk')
+        check('обычный пользователь видит только свою встречу', s == 200 and list(items) == ['Планёрка'] and o.get('role') == '')
+        check('своя встреча отмечена, без пометки админа', items.get('Планёрка', {}).get('mine') is True
+              and items.get('Планёрка', {}).get('admin_view') is False)
+        check('гость не правит чужую встречу (не организатор)', items.get('Планёрка', {}).get('can_edit') is False)
         check('имя комнаты', items.get('Планёрка', {}).get('room') == 'productionit-plan-1')
+        check('чужую встречу править нельзя', call('prodit_meet_edit', {'uid': '2', 'title': 'x'}, uid=UA)[0] == 403)
+        check('встречу, где гость, — тоже нельзя', call('prodit_meet_edit', {'uid': '1', 'title': 'x'}, uid=UA)[0] == 403)
+        check('обычному список админов закрыт', call('prodit_admins', uid=UA)[0] == 403)
+        check('обычный не назначает админов', call('prodit_admin_set', {'email': 'b@example.com', 'on': True}, uid=UA)[0] == 403)
+
+        print('админы')
+        s, _, (s2, sa) = login('hexneo36@gmail.com', 'Hex', 'device00000009')
+        US = sa['uid']
+        s, o = call('prodit_meetings', uid=US)
+        items = {i['title']: i for i in o.get('items', [])}
+        check('главный админ видит все встречи', s == 200 and len(items) == 2 and o.get('role') == 'super')
+        check('пометка «вы админ» только на чужой', items.get('Чужая', {}).get('admin_view') is True
+              and items.get('Чужая', {}).get('can_edit') is True)
+        s, o = call('prodit_meet_edit', {'uid': '2', 'title': 'Чужая (перенос)', 'start': '2026-11-04T12:00', 'duration': 45}, uid=US)
+        check('главный админ правит чужую встречу', s == 200 and edits and edits[-1]['uid'] == '2' and edits[-1]['key'] == 'mk'
+              and edits[-1]['title'] == 'Чужая (перенос)' and edits[-1]['duration'] == 45)
+        s, o = call('prodit_meet_edit', {'uid': '2', 'cancel': True}, uid=US)
+        check('главный админ отменяет встречу', s == 200 and edits[-1].get('cancel') is True)
+        check('несуществующая встреча — 404', call('prodit_meet_edit', {'uid': 'nope'}, uid=US)[0] == 404)
+        s, o = call('prodit_meet_create', {'title': 'Синк', 'start': '2026-11-09T10:00', 'emails': ['b@example.com'], 'recur': 'weekly', 'until': '2027-01-01'}, uid=US)
+        check('повтор уходит в календарь при создании', s == 200 and created[-1]['recur'] == 'weekly' and created[-1]['until'] == '2027-01-01')
+        s, o = call('prodit_meet_edit', {'uid': '2', 'cancel': True, 'occurrence': '2026-11-09T10:00:00+00:00', 'scope': 'one'}, uid=US)
+        check('отмена одной даты серии', s == 200 and edits[-1].get('scope') == 'one' and edits[-1].get('occurrence') == '2026-11-09T10:00:00+00:00' and edits[-1].get('cancel') is True)
+        s, o = call('prodit_meet_edit', {'uid': '2', 'title': 'x', 'occurrence': '2026-11-09T10:00:00+00:00', 'scope': 'all', 'recur': '', 'until': ''}, uid=US)
+        check('правка серии: можно снять повтор', s == 200 and edits[-1].get('scope') == 'all' and edits[-1].get('recur') == '' and edits[-1].get('until') == '')
+        s, o = call('prodit_admin_set', {'email': 'B@example.com', 'on': True}, uid=US)
+        check('главный назначает админа', s == 200 and [x['email'] for x in o.get('admins', [])] == ['b@example.com'])
+        check('главного снять нельзя', call('prodit_admin_set', {'email': 'panchuk35@gmail.com', 'on': False}, uid=US)[0] == 400)
+        s, o = call('prodit_meetings', uid=UB)
+        items = {i['title']: i for i in o.get('items', [])}
+        check('назначенный админ видит все с пометкой', o.get('role') == 'admin' and items.get('Планёрка', {}).get('admin_view') is True)
+        check('назначенный админ правит встречи', call('prodit_meet_edit', {'uid': '1', 'note': 'повестка'}, uid=UB)[0] == 200)
+        check('назначенный админ видит список админов', call('prodit_admins', uid=UB)[0] == 200)
+        check('назначенный админ не назначает других',
+              call('prodit_admin_set', {'email': 'a@example.com', 'on': True}, uid=UB)[0] == 403)
+        s, o = call('prodit_admin_set', {'email': 'b@example.com', 'on': False}, uid=US)
+        check('главный снимает админа', s == 200 and o.get('admins') == [])
+        s, o = call('prodit_meetings', uid=UB)
+        check('снятый админ снова видит только свои', o.get('role') == '' and len(o.get('items', [])) == 0)
+        s, o = call('prodit_meet_token', uid=US)
+        import base64, hashlib, hmac as _h
+        body, sig = o.get('token', '.').split('.', 1)
+        claims = json.loads(base64.urlsafe_b64decode(body + '=' * (-len(body) % 4)))
+        check('пропуск календаря подписан MEET_KEY', sig == _h.new(b'mk', body.encode(), hashlib.sha256).hexdigest()
+              and claims['e'] == 'hexneo36@gmail.com' and claims['r'] == 'super')
+        check('без входа пропуска нет', call('prodit_meet_token', uid='device00000077')[0] == 401)
         s, o = call('prodit_meet_create', {'title': 'Созвон', 'start': '2026-11-05T10:00', 'emails': ['b@example.com']}, uid=UA)
         check('встреча создаётся с ключом и почтой организатора', s == 200 and created and created[-1]['key'] == 'mk'
               and created[-1]['organizer_email'] == 'a@example.com' and created[-1]['organizer'] == 'Анна')
