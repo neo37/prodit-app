@@ -222,6 +222,7 @@ class LkCallActivity : Activity() {
             } else {
                 stage.addView(local.root, FrameLayout.LayoutParams(-1, -1).apply { setMargins(dp(8), 0, dp(8), 0) })
             }
+            Fonts.apply(stage)
             return
         }
         // трое и больше: сетка по 2 в ряд
@@ -240,6 +241,7 @@ class LkCallActivity : Activity() {
             grid.addView(line, LinearLayout.LayoutParams(-1, 0, 1f))
         }
         stage.addView(grid, FrameLayout.LayoutParams(-1, -1))
+        Fonts.apply(stage)   // значки Material Symbols и в подписях, которые меняются во время звонка
     }
 
     private fun control(icon: String, go: () -> Unit): TextView {

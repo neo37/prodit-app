@@ -72,7 +72,20 @@ final class Icons {
             "‹", "\ue5cb",
             "\ud83d\udce5", "\uf090",
             "\ud83d\udd04", "\ue5d5",
-            "\ud83d\udcf2", "\uf2cd"
+            "\ud83d\udcf2", "\uf2cd",
+            // 05.11.2026 Production IT: календарь, компания, профиль, бэклог, звонок, чат
+            "\ud83d\udcc5", "\uebcc",
+            "\ud83c\udfe2", "\ue7ee",
+            "\ud83d\udc64", "\ue7fd",
+            "\ud83d\udccb", "\ue85d",
+            "\ud83c\udfa4", "\ue029",
+            "\ud83d\udd07", "\ue02b",
+            "\ud83d\udcf7", "\ue04b",
+            "\u25a6", "\ue8f3",
+            "\u21c4", "\ue8d4",
+            "\u27a4", "\ue163",
+            "\uff0b", "\ue145",
+            "\u2197", "\uf1e1",
     };
     private static final String FILLED = "♥⏺★";
     private static final Map<String, String> MAP = new HashMap<>();
