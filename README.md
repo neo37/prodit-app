@@ -40,6 +40,7 @@ prodit/build_prodit.sh          # dist/prodit/production-it-<code>.aab и .apk (
 prodit/deploy_prodit.sh         # сервер на spacecode.business/prodit (docker: php + centrifugo, nginx)
 prodit/firebase_add_app.py      # один раз: регистрация com.prodit.meet в Firebase (push)
 python3 tests/prodit_test.py    # автотест сервера Production IT (Docker)
+python3 tests/meet_api_test.py  # автотест регулярных встреч (без сети и Docker)
 python3 tests/api_test.py       # автотест сервера плеера
 meet/deploy_meet.sh             # календарь встреч spacecode.business/meet
 ```

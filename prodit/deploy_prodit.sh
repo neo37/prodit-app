@@ -33,6 +33,14 @@ PY
   ssh "$HOST" "chmod 600 $R/.env"
 fi
 
+echo "== главные админы (адреса не в git: prodit/.superadmins, через запятую)"
+if [ -f prodit/.superadmins ]; then
+  ADMINS=$(tr -d ' \n' < prodit/.superadmins)
+  ssh "$HOST" "sed -i '/^PRODIT_SUPERADMINS=/d' $R/.env && echo 'PRODIT_SUPERADMINS=$ADMINS' >> $R/.env"
+elif ! ssh "$HOST" "grep -q ^PRODIT_SUPERADMINS= $R/.env"; then
+  echo "нет prodit/.superadmins и PRODIT_SUPERADMINS на сервере — без них главных админов не будет"; exit 1
+fi
+
 echo "== код"
 ADMIN_KEY=$(ssh "$HOST" "grep ^ADMIN_KEY= $R/.env | cut -d= -f2-")
 TMP=$(mktemp -d)

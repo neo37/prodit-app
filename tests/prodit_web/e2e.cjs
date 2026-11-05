@@ -146,13 +146,80 @@ async function send(page, msg) {
     await A.goto(APP + '#/meet');
     check('список встреч (мои)', await waitFor(async () => { const s = await text(A, '#list'); return s.includes('Планёрка команды') && s.includes('Демо заказчику') && !s.includes('Ретро спринта'); }));
     check('идущая встреча отмечена', (await text(A, '#list')).toLowerCase().includes('идёт'));
-    await A.click('[data-f="0"]');
-    check('«Все» — видна и чужая встреча', await waitFor(async () => (await text(A, '#list')).includes('Ретро спринта')));
+    check('обычный пользователь не видит чужую встречу', !(await text(A, '#list')).includes('Ретро спринта'));
     await shot(A, 'desktop-08-meetings');
-    await A.click('a[href="#/meet/cal"]');
-    await sleep(1500);
-    check('календарь /meet/ во встроенном окне', await A.$eval('#main iframe.frame', (f) => f.getAttribute('src')) === '/meet/');
+
+    console.log('календарь в приложении');
+    check('календарь — свой, без встроенных страниц', (await A.$$('#main iframe')).length === 0 && !!(await A.$('#main .cal-grid')));
+    check('на широком экране — неделя', (await A.$$eval('.cal-col', (c) => c.filter((x) => getComputedStyle(x).display !== 'none').length)) === 7);
+    check('встречи на сетке', await waitFor(async () => (await text(A, '#calScroll')).includes('Демо заказчику')));
     await shot(A, 'desktop-09-calendar');
+    const range0 = await text(A, '#calRange');
+    await A.click('#calNext');
+    check('листает неделю вперёд', (await text(A, '#calRange')) !== range0);
+    await A.click('#calToday');
+    check('«Сегодня» возвращает', (await text(A, '#calRange')) === range0);
+
+    console.log('регулярная встреча');
+    await A.click('#mNew');
+    await A.waitForSelector('#mT', { visible: true });
+    await A.type('#mT', 'Еженедельный синк');
+    await A.type('#mG', 'boris@acme.io');
+    await A.select('#mR', 'weekly');
+    await shot(A, 'desktop-09a-new-weekly');
+    await A.click('#mGo');
+    check('серия создана: много дат с одним uid', await waitFor(async () => {
+      const ms = (await (await fetch(BASE + '/__test/meetings')).json()).filter((m) => m.title === 'Еженедельный синк');
+      return ms.length > 20 && new Set(ms.map((m) => m.uid)).size === 1 && ms.every((m) => m.recur === 'weekly');
+    }));
+    const seriesRows = () => A.$$eval('#list .meet .nm', (e) => e.filter((x) => x.innerText.includes('Еженедельный синк')).length);
+    check('в списке одна строка с пометкой повторения', await waitFor(async () => (await seriesRows()) === 1 && (await text(A, '#list')).includes('Каждую неделю')));
+    const seriesTitle = () => A.$$eval('.cal-ev', (e) => e.filter((x) => x.innerText.includes('Еженедельный синк')).length);
+    check('на этой неделе одна дата серии', await waitFor(async () => (await seriesTitle()) === 1));
+    await A.click('#calNext');
+    check('и на следующей', (await seriesTitle()) === 1);
+    await shot(A, 'desktop-09b-calendar-series');
+    // отмена одной даты: остальные на месте
+    await A.evaluate(() => [...document.querySelectorAll('.cal-ev')].find((x) => x.innerText.includes('Еженедельный синк')).click());
+    await A.waitForSelector('[data-a=edit]', { visible: true });
+    await shot(A, 'desktop-09c-meeting-card');
+    await A.click('[data-a=edit]');
+    await A.waitForSelector('#mS', { visible: true });
+    check('форма спрашивает, что менять; для одной даты повтор скрыт', await A.$eval('#mRec', (e) => e.hidden));
+    await A.click('[data-a=drop]');
+    await A.waitForSelector('[data-a=yes]', { visible: true });
+    await A.click('[data-a=yes]');
+    check('дата исчезла из календаря', await waitFor(async () => (await seriesTitle()) === 0));
+    await A.click('#calNext');
+    check('следующая дата осталась', await waitFor(async () => (await seriesTitle()) === 1));
+    // правка всей серии: новая тема у всех дат
+    await A.evaluate(() => [...document.querySelectorAll('.cal-ev')].find((x) => x.innerText.includes('Еженедельный синк')).click());
+    await A.waitForSelector('[data-a=edit]', { visible: true });
+    await A.click('[data-a=edit]');
+    await A.waitForSelector('#mS', { visible: true });
+    await A.select('#mS', 'all');
+    check('для всей серии повтор виден', !(await A.$eval('#mRec', (e) => e.hidden)));
+    await A.$eval('#mT', (e) => { e.value = ''; });
+    await A.type('#mT', 'Синк всей команды');
+    await A.click('#mGo');
+    check('тема сменилась у всех дат', await waitFor(async () => {
+      const ms = await (await fetch(BASE + '/__test/meetings')).json();
+      return ms.filter((m) => m.title === 'Синк всей команды').length > 20 && !ms.some((m) => m.title === 'Еженедельный синк');
+    }));
+    // клик по свободному времени — новая встреча на это время
+    await A.goto(APP + '#/meet');
+    await A.waitForSelector('.cal-col');
+    await A.click('#calNext');
+    await A.evaluate(() => { const c = document.querySelector('.cal-col[data-col="4"]'), r = c.getBoundingClientRect(); c.dispatchEvent(new MouseEvent('click', { bubbles: true, clientY: r.top + 15 * 48 + 5 })); });
+    await A.waitForSelector('#mH', { visible: true });
+    check('время из клика по сетке', (await A.$eval('#mH', (e) => e.value)) === '15:00');
+    await A.click('[data-a=no]');
+    // телефон: календарь на весь экран, один день
+    await B.goto(APP + '#/meet/cal');
+    await B.waitForSelector('.cal-grid');
+    check('на телефоне — один день и вкладки недели', await waitFor(async () => (await B.$$eval('.cal-col', (c) => c.filter((x) => getComputedStyle(x).display !== 'none').length)) === 1
+      && (await B.$$('.cal-day')).length === 7));
+    await shot(B, 'phone-08a-calendar');
     await B.goto(APP + '#/meet');
     await waitFor(async () => (await text(B, '#list')).includes('Планёрка'));
     await shot(B, 'phone-08-meetings');

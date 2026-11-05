@@ -25,3 +25,4 @@ node_modules/
 web/production-it/download/
 *.exe
 *.7z
+prodit/.superadmins

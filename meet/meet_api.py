@@ -7,13 +7,19 @@
 Без кода доступа — FREE_PER_DAY действий (создать/изменить) в сутки на браузер и на IP; дальше — код (MEET_KEY).
 Править встречу может её создатель (тот же браузер, X-Client) или владелец кода; гостям — обновлённое приглашение
 (тот же UID, SEQUENCE+1), убранным гостям и при отмене — METHOD:CANCEL.
+Регулярные встречи: одна строка в базе (recur, recur_until, exdates), список разворачивает её в отдельные даты по местному
+времени часового пояса серии. Гостям — одно письмо с RRULE, без рассылки на каждую дату.
 Настройки — /etc/spacecode-meet.env (MEET_KEY, SMTP_*), данные — /var/lib/spacecode-meet/meetings.db.
 
   GET  /meet/api/list    (X-Client, X-Meet-Key)  — свои встречи; с кодом — все
-  POST /meet/api/create  {key, client, title, start, tz, duration, organizer, organizer_email, emails[], note, backup_link, lang}
-  POST /meet/api/edit    {key, client, uid, …те же поля… | cancel: true}
+  POST /meet/api/create  {key, client, title, start, tz, duration, organizer, organizer_email, emails[], note, backup_link, lang, recur, until}
+  POST /meet/api/edit    {key, client, uid, …те же поля… | cancel: true, occurrence, scope: "one" | "all"}
+       recur: daily | weekdays | weekly | biweekly | monthly | "" (не повторять); until: YYYY-MM-DD или ""
+       occurrence — start выбранной даты серии из списка; scope "one" — изменить или отменить только её
   GET  /meet/api/health
 """
+import base64
+import hashlib
 import hmac
 import json
 import os
@@ -25,7 +31,8 @@ import ssl
 import threading
 import time
 import uuid
-from datetime import datetime, timedelta, timezone
+from calendar import monthrange
+from datetime import date, datetime, time as dtime, timedelta, timezone
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -34,7 +41,7 @@ from zoneinfo import ZoneInfo
 ENV = os.environ
 ROOMS = "https://efir.umno.cloud/rooms/"
 PLAY = "https://play.google.com/store/apps/details?id=online.magicbtn.player"
-CALENDAR = "https://spacecode.business/meet/"
+CALENDAR = "https://spacecode.business/production-it/app/#/meet/cal"   # вход по коду из письма — и видны свои встречи
 DATA = ENV.get("MEET_DATA", "/var/lib/spacecode-meet")
 LOG = os.path.join(DATA, "meetings.jsonl")   # журнал версии 1 — переносится в базу при первом запуске
 DB = os.path.join(DATA, "meetings.db")
@@ -45,9 +52,12 @@ BOXES = [
     {"host": ENV.get("SMTP2_HOST", ""), "port": int(ENV.get("SMTP2_PORT", "465")), "user": ENV.get("SMTP2_USER", ""), "password": ENV.get("SMTP2_PASS", "")},
 ]
 _lock = threading.Lock()
+RECUR = {"daily": "FREQ=DAILY", "weekdays": "FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR", "weekly": "FREQ=WEEKLY",
+         "biweekly": "FREQ=WEEKLY;INTERVAL=2", "monthly": "FREQ=MONTHLY"}
 
 T = {
-    "ru": {"subj": "Встреча Production IT: {title}", "hello": "Вас пригласили на встречу Production IT.",
+    "ru": {"repeat": "Повторяется", "freq": {"daily": "каждый день", "weekdays": "по будням", "weekly": "каждую неделю", "biweekly": "раз в две недели", "monthly": "каждый месяц"}, "until": "до", "cancelled_one": "Отменена только эта дата, остальные встречи серии остаются.",
+           "subj": "Встреча Production IT: {title}", "hello": "Вас пригласили на встречу Production IT.",
            "updated": "Встреча изменена — проверьте время и ссылку.", "cancelled": "Встреча отменена.",
            "upd_prefix": "Изменено: ", "cancel_prefix": "Отменено: ",
            "when": "Когда", "dur": "Длительность", "min": "мин", "who": "Организатор", "join": "Присоединиться",
@@ -55,7 +65,8 @@ T = {
            "play": "Smart AI Player в Google Play", "tip2": "Встреча проходит в браузере, ничего ставить не нужно. Приглашение для календаря — во вложении.",
            "tip": "Ссылка открывается в браузере, установка не нужна. Приглашение для календаря — во вложении.",
            "ad": "Звонки, чат и видео с телефона — в приложении Smart AI Player:"},
-    "en": {"subj": "Production IT meeting: {title}", "hello": "You are invited to a Production IT meeting.",
+    "en": {"repeat": "Repeats", "freq": {"daily": "every day", "weekdays": "on weekdays", "weekly": "every week", "biweekly": "every two weeks", "monthly": "every month"}, "until": "until", "cancelled_one": "Only this date is cancelled, the rest of the series stays.",
+           "subj": "Production IT meeting: {title}", "hello": "You are invited to a Production IT meeting.",
            "updated": "The meeting was changed — please check the time and the link.", "cancelled": "The meeting was cancelled.",
            "upd_prefix": "Updated: ", "cancel_prefix": "Cancelled: ",
            "when": "When", "dur": "Duration", "min": "min", "who": "Organizer", "join": "Join",
@@ -63,7 +74,8 @@ T = {
            "play": "Smart AI Player on Google Play", "tip2": "The meeting runs in the browser, nothing to install. A calendar invitation is attached.",
            "tip": "The link opens in a browser, nothing to install. A calendar invitation is attached.",
            "ad": "Calls, chat and videos on your phone — Smart AI Player app:"},
-    "sr": {"subj": "Састанак Production IT: {title}", "hello": "Позвани сте на састанак Production IT.",
+    "sr": {"repeat": "Понавља се", "freq": {"daily": "сваког дана", "weekdays": "радним данима", "weekly": "сваке недеље", "biweekly": "на две недеље", "monthly": "сваког месеца"}, "until": "до", "cancelled_one": "Отказан је само овај датум, остали састанци серије остају.",
+           "subj": "Састанак Production IT: {title}", "hello": "Позвани сте на састанак Production IT.",
            "updated": "Састанак је измењен — проверите време и линк.", "cancelled": "Састанак је отказан.",
            "upd_prefix": "Измењено: ", "cancel_prefix": "Отказано: ",
            "when": "Када", "dur": "Трајање", "min": "мин", "who": "Организатор", "join": "Придружите се",
@@ -82,22 +94,109 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s).strip("-")[:24] or "meet"
 
 
-def ics(uid, title, start_utc, minutes, link, organizer, emails, note, backup, seq, cancel):
+def zone(name):
+    try:
+        return ZoneInfo(name)
+    except Exception:
+        return timezone.utc
+
+
+def vtimezone(name, start):
+    """VTIMEZONE для DTSTART;TZID: без него Outlook не сдвигает серию при переводе часов. Переходы — на 3 года вперёд."""
+    tz = zone(name)
+    t = max(start, datetime.now(timezone.utc)).astimezone(timezone.utc).replace(minute=0, second=0, microsecond=0)
+    first = start.astimezone(tz)
+    off = lambda d: f"{'-' if d.total_seconds() < 0 else '+'}{int(abs(d.total_seconds()) // 3600):02d}{int(abs(d.total_seconds()) % 3600 // 60):02d}"
+    part = lambda kind, at, a, b: [f"BEGIN:{kind}", f"DTSTART:{at.strftime('%Y%m%dT%H%M%S')}", f"TZOFFSETFROM:{off(a)}", f"TZOFFSETTO:{off(b)}", f"END:{kind}"]
+    out = ["BEGIN:VTIMEZONE", f"TZID:{name}"] + part("STANDARD", first, first.utcoffset(), first.utcoffset())
+    prev = t.astimezone(tz).utcoffset()
+    for _ in range(3 * 366 * 24):
+        t += timedelta(hours=1)
+        cur = t.astimezone(tz)
+        if cur.utcoffset() != prev:
+            out += part("DAYLIGHT" if cur.dst() else "STANDARD", t + prev, prev, cur.utcoffset())
+            prev = cur.utcoffset()
+    return out + ["END:VTIMEZONE"]
+
+
+def ics(uid, title, start_utc, minutes, link, organizer, emails, note, backup, seq, cancel, m=None, occurrence=None):
+    """m — встреча-серия: DTSTART в её часовом поясе + RRULE; occurrence — отмена одной даты серии (RECURRENCE-ID)."""
     fmt = "%Y%m%dT%H%M%SZ"
     esc = lambda v: (v or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", "\\n")
     desc = (note + "\n\n" if note else "") + link + ("\nBackup: " + backup if backup else "")
+    recur, tzname = (m or {}).get("recur") or "", (m or {}).get("tz") or "UTC"
+    tz = zone(tzname)
+    named = bool(recur) and tz is not timezone.utc and tzname != "UTC"
+    def stamp(field, dt):
+        return f"{field};TZID={tzname}:{dt.astimezone(tz).strftime('%Y%m%dT%H%M%S')}" if named else f"{field}:{dt.astimezone(timezone.utc).strftime(fmt)}"
+    first = occurrence or start_utc
     lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Production IT//spacecode.business meet//EN",
-             f"METHOD:{'CANCEL' if cancel else 'REQUEST'}", "BEGIN:VEVENT", f"UID:{uid}", f"SEQUENCE:{seq}",
-             f"DTSTAMP:{datetime.now(timezone.utc).strftime(fmt)}",
-             f"DTSTART:{start_utc.strftime(fmt)}", f"DTEND:{(start_utc + timedelta(minutes=minutes)).strftime(fmt)}",
-             f"SUMMARY:{esc('Production IT · ' + title)}", f"LOCATION:{link}", f"URL:{link}", f"DESCRIPTION:{esc(desc)}",
-             f"STATUS:{'CANCELLED' if cancel else 'CONFIRMED'}",
-             f"ORGANIZER;CN={esc(organizer)}:mailto:{BOXES[0]['user']}"]
+             f"METHOD:{'CANCEL' if cancel else 'REQUEST'}"]
+    if named:
+        lines += vtimezone(tzname, start_utc)
+    lines += ["BEGIN:VEVENT", f"UID:{uid}", f"SEQUENCE:{seq}", f"DTSTAMP:{datetime.now(timezone.utc).strftime(fmt)}",
+              stamp("DTSTART", first), stamp("DTEND", first + timedelta(minutes=minutes))]
+    if occurrence:
+        lines.append(stamp("RECURRENCE-ID", occurrence))
+    elif recur:
+        rule = RECUR[recur]
+        if m.get("recur_until"):
+            end = datetime.combine(date.fromisoformat(m["recur_until"]), dtime(23, 59, 59), tz).astimezone(timezone.utc)
+            rule += f";UNTIL={end.strftime(fmt)}"
+        lines.append("RRULE:" + rule)
+        at = start_utc.astimezone(tz)
+        for x in json.loads(m.get("exdates") or "[]"):   # время отменённой даты — как у серии
+            lines.append(stamp("EXDATE", datetime.combine(date.fromisoformat(x), at.time(), tz)))
+    lines += [f"SUMMARY:{esc('Production IT · ' + title)}", f"LOCATION:{link}", f"URL:{link}", f"DESCRIPTION:{esc(desc)}",
+              f"STATUS:{'CANCELLED' if cancel else 'CONFIRMED'}",
+              f"ORGANIZER;CN={esc(organizer)}:mailto:{BOXES[0]['user']}"]
     lines += [f"ATTENDEE;ROLE=REQ-PARTICIPANT;RSVP=TRUE:mailto:{e}" for e in emails]
     if not cancel:
         lines += ["BEGIN:VALARM", "TRIGGER:-PT10M", "ACTION:DISPLAY", "DESCRIPTION:Production IT", "END:VALARM"]
     lines += ["END:VEVENT", "END:VCALENDAR"]
     return "\r\n".join(lines) + "\r\n"
+
+
+# ---------- регулярные встречи ----------
+
+def series_dates(first, recur):
+    """Бесконечный ряд местных дат-времён серии. Ежемесячно: в месяцах без такого числа встречи нет (как в RRULE)."""
+    n = 0
+    while True:
+        if recur == "monthly":
+            months = first.month - 1 + n
+            y, mo = first.year + months // 12, months % 12 + 1
+            if first.day <= monthrange(y, mo)[1]:
+                yield first.replace(year=y, month=mo)
+        else:
+            d = first + timedelta(days=n * {"daily": 1, "weekdays": 1, "weekly": 7, "biweekly": 14}[recur])
+            if recur != "weekdays" or d.weekday() < 5:
+                yield d
+        n += 1
+
+
+def occurrences(m, lo, hi):
+    """Начала встречи (aware, UTC) в промежутке [lo, hi]: обычная — одно, серия — по местному времени её часового пояса."""
+    start = datetime.fromisoformat(m["start"])
+    if not m["recur"]:
+        return [start] if lo <= start <= hi else []
+    tz = zone(m["tz"])
+    skip = set(json.loads(m["exdates"] or "[]"))
+    out = []
+    for d in series_dates(start.astimezone(tz).replace(tzinfo=None), m["recur"]):
+        at = d.replace(tzinfo=tz).astimezone(timezone.utc)
+        if at > hi or (m["recur_until"] and d.date().isoformat() > m["recur_until"]):
+            break
+        if at >= lo and d.date().isoformat() not in skip:
+            out.append(at)
+    return out
+
+
+def next_start(m):
+    """Ближайшая дата для письма: начало серии могло быть давно."""
+    now = datetime.now(timezone.utc)
+    near = occurrences(m, now, now + timedelta(days=400))
+    return near[0] if near else datetime.fromisoformat(m["start"])
 
 
 def send(box, msg):
@@ -148,6 +247,10 @@ def db():
         organizer TEXT, org_email TEXT, emails TEXT, note TEXT, backup TEXT, lang TEXT, tz TEXT, owner TEXT, ip TEXT,
         created INTEGER, updated INTEGER, seq INTEGER DEFAULT 0, cancelled INTEGER DEFAULT 0)""")
     c.execute("CREATE TABLE IF NOT EXISTS actions (ts INTEGER, ip TEXT, client TEXT, kind TEXT)")
+    have = {r["name"] for r in c.execute("PRAGMA table_info(meetings)")}
+    for col, ddl in (("recur", "TEXT DEFAULT ''"), ("recur_until", "TEXT DEFAULT ''"), ("exdates", "TEXT DEFAULT '[]'")):
+        if col not in have:
+            c.execute(f"ALTER TABLE meetings ADD COLUMN {col} {ddl}")
     if not c.execute("SELECT 1 FROM meetings LIMIT 1").fetchone() and os.path.exists(LOG):   # перенос журнала v1
         with open(LOG, encoding="utf-8") as f:
             for line in f:
@@ -166,6 +269,33 @@ def db():
 
 def key_ok(key):
     return hmac.compare_digest(ENV.get("MEET_KEY", "\0"), str(key or ""))
+
+
+def viewer(token):
+    """Пропуск из приложения Production IT (prodit_meet_token): base64url(JSON {e, r, x}) + "." + HMAC-SHA256(MEET_KEY).
+    Возвращает {"email", "role"} (role: "super" | "admin" | "") или None."""
+    try:
+        body, sig = str(token or "").split(".", 1)
+        want = hmac.new(ENV.get("MEET_KEY", "").encode(), body.encode(), hashlib.sha256).hexdigest()
+        if not ENV.get("MEET_KEY") or not hmac.compare_digest(want, sig):
+            return None
+        d = json.loads(base64.urlsafe_b64decode(body + "=" * (-len(body) % 4)))
+        if int(d.get("x", 0)) < time.time() or not EMAIL_RE.match(str(d.get("e", ""))):
+            return None
+        return {"email": str(d["e"]).lower(), "role": d.get("r") if d.get("r") in ("super", "admin") else ""}
+    except Exception:
+        return None
+
+
+def rights(row, v):
+    """Права зрителя v на встречу row: (видит, участник, может_править)."""
+    if not v:
+        return False, False, False
+    emails = [e.lower() for e in json.loads(row["emails"] or "[]")]
+    own = (row["org_email"] or "").lower() == v["email"]
+    member = own or v["email"] in emails
+    admin = v["role"] in ("super", "admin")
+    return member or admin, member, own or admin
 
 
 def allowed(c, key, ip, client):
@@ -194,6 +324,19 @@ def parse(d, old=None):
         raise ValueError("bad date")
     if start.tzinfo is None:
         start = start.replace(tzinfo=tz)
+    recur = str(d.get("recur", o.get("recur") or "") or "")
+    if recur and recur not in RECUR:
+        raise ValueError("bad recur")
+    until = str(d.get("until", o.get("recur_until") or "") or "") if recur else ""
+    if recur == "weekdays" and start.astimezone(tz).weekday() > 4:   # серия по будням начинается с понедельника
+        start += timedelta(days=7 - start.astimezone(tz).weekday())
+    if until:
+        try:
+            date.fromisoformat(until)
+        except ValueError:
+            raise ValueError("bad until")
+        if until < start.astimezone(tz).date().isoformat():
+            raise ValueError("bad until")
     backup = str(d.get("backup_link", o.get("backup", "")) or "").strip()[:500]
     if backup and not re.match(r"^https://[^\s<>\"]+$", backup):
         raise ValueError("bad backup link")
@@ -213,25 +356,32 @@ def parse(d, old=None):
     return {"title": title, "lang": lang, "tz": tzname, "minutes": minutes, "start": start.astimezone(timezone.utc).isoformat(),
             "backup": backup, "org_email": org_email, "emails": json.dumps(emails),
             "organizer": str(d.get("organizer", o.get("organizer", "")) or "").strip()[:80],
-            "note": str(d.get("note", o.get("note", "")) or "").strip()[:1000]}
+            "note": str(d.get("note", o.get("note", "")) or "").strip()[:1000], "recur": recur, "recur_until": until}
 
 
 # ---------- письма ----------
 
-def render(m, kind):
-    """kind: new | update | cancel. Возвращает (тема, текст, html, ics, адреса)."""
+def render(m, kind, occurrence=None):
+    """kind: new | update | cancel; occurrence — отмена одной даты серии. Возвращает (тема, текст, html, ics, адреса)."""
     t = T[m["lang"] if m["lang"] in T else "ru"]
     try:
         tz = ZoneInfo(m["tz"])
     except Exception:
         tz = timezone.utc
     start = datetime.fromisoformat(m["start"])
-    local = start.astimezone(tz)
+    recur = m.get("recur") or ""
+    local = (occurrence or (next_start(m) if recur else start)).astimezone(tz)
+    repeat = ""
+    if recur and not occurrence:
+        repeat = t["freq"][recur]
+        if m.get("recur_until"):
+            repeat += " " + t["until"] + " " + date.fromisoformat(m["recur_until"]).strftime("%d.%m.%Y")
     when = local.strftime("%d.%m.%Y %H:%M") + f" ({m['tz'] or 'UTC'})"
     link = ROOMS + m["room"]
     esc = lambda v: (v or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    head = {"new": t["hello"], "update": t["updated"], "cancel": t["cancelled"]}[kind]
+    head = t["cancelled_one"] if occurrence else {"new": t["hello"], "update": t["updated"], "cancel": t["cancelled"]}[kind]
     text = (f"{head}\n\n{m['title']}\n{t['when']}: {when}\n{t['dur']}: {m['minutes']} {t['min']}\n"
+            + (f"{t['repeat']}: {repeat}\n" if repeat else "")
             + (f"{t['who']}: {m['organizer']}\n" if m["organizer"] else "") + (f"{t['note']}: {m['note']}\n" if m["note"] else ""))
     if kind != "cancel":
         text += f"\n{t['join']}: {link}\n" + (f"{t['backup']}: {m['backup']}\n" if m["backup"] else "") + f"\n{t['tip']}"
@@ -256,7 +406,7 @@ def render(m, kind):
 <div style="max-width:520px;margin:auto;background:#ffffff;border:1.5px solid #e3e6ec;border-radius:24px;overflow:hidden">
 <div style="background:#5e27d4;background-image:linear-gradient(120deg,#5e27d4,#8a4fd8 60%,#e58fb0);padding:22px 26px;color:#ffffff">
 <div style="font:700 20px Arial;letter-spacing:.03em">Production IT</div>
-<div style="font:14px Arial;opacity:.9;margin-top:4px">{esc(banner)}</div></div>
+<div style="font:14px Arial;opacity:.9;margin-top:4px">{esc(head if occurrence else banner)}</div></div>
 <div style="padding:24px 26px 26px">
 <table role="presentation" style="border-collapse:collapse;width:100%;margin:0 0 18px"><tr>
 <td style="width:74px;vertical-align:top"><div style="width:64px;border:1.5px solid #e3e6ec;border-radius:16px;overflow:hidden;text-align:center">
@@ -266,6 +416,7 @@ def render(m, kind):
 <div style="font:600 21px/1.25 Arial;color:#1e1d30;{strike}">{esc(m['title'])}</div>
 <div style="font:15px Arial;color:#435971;margin-top:6px">{esc(t['wd'][local.weekday()])}, {local.day} {esc(t['months'][local.month - 1])}</div>
 <div style="font:600 15px Arial;color:#1e1d30;margin-top:2px">{local.strftime('%H:%M')} – {end.strftime('%H:%M')} <span style="font-weight:400;color:#697a8d">({esc(tzshort)})</span></div>
+{f'<div style="font:14px Arial;color:#5e27d4;margin-top:4px">↻ {esc(t["repeat"])}: {esc(repeat)}</div>' if repeat else ''}
 </td></tr></table>
 {f'<div style="font:14px Arial;color:#697a8d;margin:0 0 16px">{t["who"]}: <b style="color:#1e1d30">{esc(m["organizer"])}</b></div>' if m["organizer"] else ''}
 {f'<div style="margin:0 0 18px;color:#435971;background:#f5f5f9;border-radius:14px;padding:12px 14px;font:14px/1.5 Arial">{esc(m["note"])}</div>' if m["note"] else ''}
@@ -280,12 +431,12 @@ def render(m, kind):
     subject = prefix + t["subj"].format(title=m["title"]) + " · " + local.strftime("%d.%m %H:%M")
     emails = json.loads(m["emails"] or "[]")
     ical = ics(m["uid"], m["title"], start.astimezone(timezone.utc), m["minutes"], link, m["organizer"] or "Production IT",
-               emails, m["note"] or "", m["backup"] or "", m["seq"], kind == "cancel")
+               emails, m["note"] or "", m["backup"] or "", m["seq"], kind == "cancel", m, occurrence)
     return subject, text, html, ical, emails
 
 
-def send_all(m, kind):
-    subject, text, html, ical, emails = render(m, kind)
+def send_all(m, kind, occurrence=None):
+    subject, text, html, ical, emails = render(m, kind, occurrence)
     sent = {e: mail(e, subject, text, html, ical, kind == "cancel") for e in emails}
     return {e: r for e, r in sent.items() if r not in ("primary", "fallback")}, len(emails)
 
@@ -305,7 +456,7 @@ def create(d, ip="", client=""):
             return 400, {"ok": False, "error": str(e)}
         now = int(time.time())
         m.update(room=f"productionit-{slug(m['title'])}-{secrets.token_hex(3)}", uid=f"{uuid.uuid4()}@spacecode.business",
-                 owner=client, ip=ip, created=now, updated=now, seq=0, cancelled=0)
+                 owner=client, ip=ip, created=now, updated=now, seq=0, cancelled=0, exdates="[]")
         c.execute(f"INSERT INTO meetings ({','.join(m)}) VALUES ({','.join('?' * len(m))})", list(m.values()))
         c.execute("INSERT INTO actions VALUES (?,?,?,?)", (now, ip, client, "create"))
         c.commit()
@@ -320,25 +471,55 @@ def edit(d, ip="", client=""):
         if not row:
             return 404, {"ok": False, "error": "not found"}
         old = dict(row)
-        # 02.11.2026: менять может любой посетитель страницы (лимит действий без кода — ниже, как у создания)
-        if not allowed(c, d.get("key"), ip, client):
-            return 401, {"ok": False, "error": "need key"}
+        # 05.11.2026: менять могут только организатор и админы (пропуск из приложения) либо сервер с MEET_KEY
+        if not key_ok(d.get("key")):
+            v = viewer(d.get("viewer"))
+            if not v:
+                return 401, {"ok": False, "error": "login required"}
+            if not rights(row, v)[2]:
+                return 403, {"ok": False, "error": "not allowed"}
         now = int(time.time())
-        if d.get("cancel"):
+        occ = None
+        if old["recur"] and d.get("occurrence"):
+            try:
+                occ = datetime.fromisoformat(str(d["occurrence"]).replace("Z", "+00:00")).astimezone(timezone.utc)
+            except ValueError:
+                return 400, {"ok": False, "error": "bad occurrence"}
+            if not occurrences(old, occ - timedelta(seconds=1), occ + timedelta(seconds=1)):
+                return 400, {"ok": False, "error": "bad occurrence"}
+        one = bool(occ) and d.get("scope") == "one"
+        split = None
+        if one:   # только эта дата: из серии она исключается; правка — отдельная встреча в той же комнате
+            day = occ.astimezone(zone(old["tz"])).date().isoformat()
+            m = dict(old, seq=old["seq"] + 1, updated=now, exdates=json.dumps(sorted(set(json.loads(old["exdates"] or "[]")) | {day})))
+            if not d.get("cancel"):
+                try:
+                    split = dict(old, **parse({**d, "recur": "", "until": "", "tz": old["tz"]}, dict(old, start=occ.isoformat())))
+                except ValueError as e:
+                    return 400, {"ok": False, "error": str(e)}
+                split.update(uid=f"{uuid.uuid4()}@spacecode.business", seq=0, created=now, updated=now, cancelled=0, exdates="[]")
+                c.execute(f"INSERT INTO meetings ({','.join(split)}) VALUES ({','.join('?' * len(split))})", list(split.values()))
+        elif d.get("cancel"):
             m = dict(old, seq=old["seq"] + 1, cancelled=1, updated=now)
         else:
             try:
+                d, exdates = shift_series(d, old, occ)
                 m = dict(old, **parse(d, old))
             except ValueError as e:
                 return 400, {"ok": False, "error": str(e)}
-            m.update(seq=old["seq"] + 1, updated=now)
+            m.update(seq=old["seq"] + 1, updated=now, exdates=exdates)
         c.execute("UPDATE meetings SET title=?, start=?, minutes=?, organizer=?, org_email=?, emails=?, note=?, backup=?, lang=?, tz=?,"
-                  " seq=?, cancelled=?, updated=? WHERE uid=?",
+                  " seq=?, cancelled=?, updated=?, recur=?, recur_until=?, exdates=? WHERE uid=?",
                   (m["title"], m["start"], m["minutes"], m["organizer"], m["org_email"], m["emails"], m["note"], m["backup"],
-                   m["lang"], m["tz"], m["seq"], m["cancelled"], m["updated"], m["uid"]))
+                   m["lang"], m["tz"], m["seq"], m["cancelled"], m["updated"], m["recur"], m["recur_until"], m["exdates"], m["uid"]))
         c.execute("INSERT INTO actions VALUES (?,?,?,?)", (now, ip, client, "cancel" if d.get("cancel") else "edit"))
         c.commit()
-    if d.get("cancel"):
+    if one:
+        failed, n = send_all(m, "cancel", occ)
+        if split:   # у гостей дата из серии исчезает, вместо неё — новое приглашение
+            failed, n = send_all(split, "new")
+            m = split
+    elif d.get("cancel"):
         failed, n = send_all(m, "cancel")
     else:
         failed, n = send_all(m, "update")
@@ -349,17 +530,53 @@ def edit(d, ip="", client=""):
     return 200, {"ok": True, "uid": m["uid"], "link": ROOMS + m["room"], "sent": n - len(failed), "failed": failed}
 
 
-def upcoming(key, client=""):
-    """Календарь: все встречи (с 02.11.2026 видны и редактируются всеми посетителями)."""
+def shift_series(d, old, occ):
+    """Правка всей серии: клиент прислал время выбранной даты (occ), а хранится начало серии.
+    Перенос даты сдвигает всю серию на столько же; сменили правило повторения — серия начинается заново с этой даты.
+    Часовой пояс остаётся у серии: иначе правка из другого пояса сдвинет её местное время."""
+    if not old["recur"]:
+        return d, old["exdates"]
+    d = {k: v for k, v in d.items() if k != "tz"}
+    if d.get("recur", old["recur"]) != old["recur"]:
+        return d, "[]"
+    if occ is None or "start" not in d:
+        return d, old["exdates"]
+    try:
+        tz = zone(old["tz"])
+        new = datetime.fromisoformat(str(d["start"]).replace("Z", "+00:00")).astimezone(tz)
+    except ValueError:
+        raise ValueError("bad date")
+    days = (new.date() - occ.astimezone(tz).date()).days
+    anchor = datetime.fromisoformat(old["start"]).astimezone(tz).date() + timedelta(days=days)
+    moved = [(date.fromisoformat(x) + timedelta(days=days)).isoformat() for x in json.loads(old["exdates"] or "[]")]
+    return {**d, "start": datetime.combine(anchor, new.time(), tz).isoformat()}, json.dumps(moved)
+
+
+def upcoming(key, client="", token=""):
+    """Календарь (05.11.2026): встречу видят организатор и гости; админы Production IT — все, с пометкой admin_view.
+    Сервер приложения (MEET_KEY) получает все встречи и фильтрует сам; без пропуска — пустой список."""
     c = db()
-    lo = (datetime.now(timezone.utc) - timedelta(days=2)).isoformat()
-    hi = (datetime.now(timezone.utc) + timedelta(days=120)).isoformat()
-    q = "SELECT * FROM meetings WHERE cancelled = 0 AND start BETWEEN ? AND ?"
-    rows = c.execute(q + " ORDER BY start", (lo, hi)).fetchall()   # 02.11.2026: все встречи видны всем
-    out = [{"uid": r["uid"], "title": r["title"], "start": r["start"], "minutes": r["minutes"], "link": ROOMS + r["room"],
-            "organizer": r["organizer"], "organizer_email": r["org_email"] or "", "emails": json.loads(r["emails"] or "[]"),
-            "note": r["note"] or "", "tz": r["tz"], "mine": True} for r in rows]   # любой может открыть и изменить
-    return 200, {"ok": True, "items": out, "all": True}
+    lo = datetime.now(timezone.utc) - timedelta(days=31)   # календарь листается и назад
+    hi = datetime.now(timezone.utc) + timedelta(days=186)
+    rows = c.execute("SELECT * FROM meetings WHERE cancelled = 0 AND start <= ? AND (recur != '' OR start >= ?)",
+                     (hi.isoformat(), lo.isoformat())).fetchall()
+    server = key_ok(key)
+    v = None if server else viewer(token)
+    if not server and not v:
+        return 200, {"ok": True, "items": [], "all": False, "login": True}
+    out = []
+    for r in rows:
+        see, member, edit_ok = (True, False, True) if server else rights(r, v)
+        if not see:
+            continue
+        for at in occurrences(r, lo, hi):   # у серии uid один, а дат много: дату определяет start
+            out.append({"uid": r["uid"], "title": r["title"], "start": at.isoformat(), "minutes": r["minutes"], "link": ROOMS + r["room"],
+                        "organizer": r["organizer"], "organizer_email": r["org_email"] or "", "emails": json.loads(r["emails"] or "[]"),
+                        "note": r["note"] or "", "tz": r["tz"], "mine": edit_ok, "member": member,
+                        "admin_view": bool(v) and not member, "recur": r["recur"] or "", "until": r["recur_until"] or ""})
+    out.sort(key=lambda x: datetime.fromisoformat(x["start"]))
+    return 200, {"ok": True, "items": out, "all": False, "role": v["role"] if v else "server",
+                 "email": v["email"] if v else ""}
 
 
 # ---------- уведомление о заходе на страницу: личка «ururu» в Умном плеере ----------
@@ -418,7 +635,7 @@ class H(BaseHTTPRequestHandler):
             return self._out(200, {"ok": True})
         if self.path.startswith("/meet/api/list"):
             visit(self._client() or self._ip(), self.headers.get("User-Agent", ""), bool(self.headers.get("X-Meet-Key")))
-            return self._out(*upcoming(self.headers.get("X-Meet-Key", ""), self._client()))
+            return self._out(*upcoming(self.headers.get("X-Meet-Key", ""), self._client(), self.headers.get("X-Meet-Viewer", "")))
         self._out(404, {"ok": False})
 
     def do_POST(self):

@@ -137,7 +137,35 @@ input.code{font:600 26px/1 ui-monospace,Menlo,monospace;letter-spacing:.35em;tex
 .meet .sub{color:var(--sub);font-size:13px}
 .meet .acts{display:flex;gap:6px;flex-direction:column;align-items:flex-end}
 .live{color:var(--ok);font-size:12px;font-weight:600}
-.frame{flex:1;border:0;width:100%;min-height:0;background:var(--bg2)}
+.meet[data-open]{cursor:pointer}
+.meet[data-open]:hover{background:rgba(94,39,212,.08)}
+.sub.rep,.meet-when{color:var(--link);font-size:13px}
+.meet-when{color:var(--ink);font-size:15px;text-transform:none}
+.modal-card .sub.rep,.modal-card .sub.warn{margin:0 0 12px}
+.sub.warn{color:#f7b83d;font-size:12px}
+.modal-card .kv{margin:0 0 18px}
+.view-acts .btn{padding:10px 16px}
+/* календарь */
+.cal-link{display:none}
+.list-tools.phone-only{display:none}
+.cal-head h2{font-size:17px}
+.cal-days{display:grid;grid-template-columns:52px repeat(7,1fr);border-bottom:1px solid var(--line);flex:none;overflow:hidden;scrollbar-gutter:stable}
+.cal-day{background:none;border:0;padding:8px 2px;color:var(--sub);font-size:12px;text-align:center;text-transform:capitalize;min-width:0}
+.cal-day b{display:block;margin:2px auto 0;width:32px;height:32px;line-height:32px;border-radius:50%;color:var(--ink);font-size:17px;font-weight:600}
+.cal-day.today b{background:var(--acc);color:#fff}
+.cal-scroll{flex:1;overflow-y:auto;min-height:0;scrollbar-gutter:stable}
+.cal-grid{display:grid;grid-template-columns:52px repeat(7,1fr)}
+.cal-hour{height:48px;font-size:11px;color:var(--sub);text-align:right;padding-right:8px;transform:translateY(-8px)}
+.cal-col{position:relative;min-width:0;cursor:pointer;border-left:1px solid rgba(47,44,74,.55);background-image:repeating-linear-gradient(to bottom,rgba(47,44,74,.55) 0 1px,transparent 1px 24px,rgba(47,44,74,.22) 24px 25px,transparent 25px 48px)}
+.cal-ev{position:absolute;z-index:1;overflow:hidden;text-align:left;border:0;border-left:3px solid var(--link);border-radius:8px;background:#3d2a86;color:#fff;padding:3px 6px;font-size:12px;line-height:1.25;display:block}
+.cal-ev:hover{background:var(--acc)}
+.cal-ev b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cal-ev span{opacity:.85;white-space:nowrap}
+.cal-ev.short{padding-top:1px;padding-bottom:0}
+.cal-ev.short span{display:none}
+.cal-ev.past{background:#2a2745;border-left-color:var(--sub);color:var(--text)}
+.cal-now{position:absolute;left:0;right:0;height:2px;background:var(--pink);z-index:2;pointer-events:none}
+.cal-now:before{content:'';position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--pink)}
 
 /* профиль */
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin:16px}
@@ -184,6 +212,17 @@ input.code{font:600 26px/1 ui-monospace,Menlo,monospace;letter-spacing:.35em;tex
   .nav .arrow{display:block}
   .back{display:grid}
   .list{border:0}
+  .cal-link{display:inline-flex}
+  .list-tools.phone-only{display:flex}
+  /* телефон: один день, сверху вкладки дней недели */
+  .cal-grid{grid-template-columns:52px 1fr}
+  .cal-col:not(.on){display:none}
+  .cal-days{grid-template-columns:repeat(7,1fr);padding:0 4px;scrollbar-gutter:auto}
+  .cal-gut{display:none}
+  .cal-day.on{color:var(--ink)}
+  .cal-day.on b{box-shadow:inset 0 0 0 2px var(--acc2)}
+  .cal-head{gap:6px}
+  .cal-head .icon-btn{width:36px;height:36px}
   .msg{max-width:92%}
   .del{display:grid;opacity:.75}
   .modal{align-items:end;padding:0}

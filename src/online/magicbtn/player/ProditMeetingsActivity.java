@@ -37,11 +37,14 @@ public class ProditMeetingsActivity extends Activity {
     private TextView status, filter;
     private JSONArray items;
     private boolean onlyMine = true;
-    /** 1.1: вид «Календарь» — тот же календарь, что на spacecode.business/meet (неделя/день), внутри приложения. */
+    /** Вид «Календарь» — нативный экран на тех же данных (ProditCalendarView). */
     private boolean gridView;
-    private android.webkit.WebView web;
-    private android.widget.FrameLayout body;
+    private ProditCalendarView calendar;
+    private ScrollView listScroll;
     private TextView viewBtn;
+    /** 1.3: роль на сервере — "super" (главный админ), "admin" или "" */
+    private String role = "";
+    private TextView adminsBtn;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -84,6 +87,13 @@ public class ProditMeetingsActivity extends Activity {
         LinearLayout.LayoutParams vl = new LinearLayout.LayoutParams(-2, -2);
         vl.leftMargin = Ui.dp(this, 8);
         header.addView(viewBtn, vl);
+        adminsBtn = Ui.button(this, "👥", Ui.WHITE);
+        adminsBtn.setTextSize(13);
+        adminsBtn.setVisibility(android.view.View.GONE);
+        adminsBtn.setOnClickListener(v -> admins());
+        LinearLayout.LayoutParams ml = new LinearLayout.LayoutParams(-2, -2);
+        ml.leftMargin = Ui.dp(this, 8);
+        header.addView(adminsBtn, ml);
         TextView add = Ui.button(this, "+", Ui.YELLOW);
         add.setOnClickListener(v -> create());
         LinearLayout.LayoutParams al = new LinearLayout.LayoutParams(-2, -2);
@@ -98,68 +108,43 @@ public class ProditMeetingsActivity extends Activity {
         status.setText(Ui.t(R.string.loading));
         col.addView(status);
 
-        ScrollView scroll = new ScrollView(this);
+        listScroll = new ScrollView(this);
         list = new LinearLayout(this);
         list.setOrientation(LinearLayout.VERTICAL);
         list.setPadding(p, 0, p, p);
-        scroll.addView(list);
-        body = new android.widget.FrameLayout(this);
-        body.addView(scroll, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        listScroll.addView(list);
+        calendar = new ProditCalendarView(this, new ProditCalendarView.Host() {
+            @Override
+            public void openMeeting(JSONObject m) {
+                card(m);
+            }
+
+            @Override
+            public void newMeeting(Calendar when) {
+                createDialog(ProditMeetingsActivity.this, null, null, null, when, ProditMeetingsActivity.this::load);
+            }
+        });
+        android.widget.FrameLayout body = new android.widget.FrameLayout(this);
+        body.addView(listScroll, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        body.addView(calendar, new android.widget.FrameLayout.LayoutParams(-1, -1));
         col.addView(body, new LinearLayout.LayoutParams(-1, 0, 1));
         setContentView(col);
         Ui.fitSystemBars(this);
         applyView();
     }
 
-    /** Переключить вид: список встреч ⇄ календарь как на сайте. */
+    /** Переключить вид: список встреч ⇄ календарь. */
     private void applyView() {
         viewBtn.setText(gridView ? "☰ " + Prodit.t("cal_list") : "▦ " + Prodit.t("cal_grid"));
-        filter.setVisibility(gridView ? android.view.View.GONE : android.view.View.VISIBLE);
         status.setVisibility(gridView ? android.view.View.GONE : android.view.View.VISIBLE);
-        if (gridView) {
-            if (web == null) {
-                web = new android.webkit.WebView(this);
-                web.setBackgroundColor(Ui.BG);
-                android.webkit.WebSettings ws = web.getSettings();
-                ws.setJavaScriptEnabled(true);
-                ws.setDomStorageEnabled(true);
-                web.setWebViewClient(new android.webkit.WebViewClient() {
-                    @Override
-                    public boolean shouldOverrideUrlLoading(android.webkit.WebView v, android.webkit.WebResourceRequest req) {
-                        String u = req.getUrl().toString();
-                        java.util.regex.Matcher m = java.util.regex.Pattern.compile("/rooms/([A-Za-z0-9_-]{6,64})").matcher(u);
-                        if (m.find()) {   // «Присоединиться» — звонок в приложении, а не в браузере
-                            Prodit.openCall(ProditMeetingsActivity.this, m.group(1), null);
-                            return true;
-                        }
-                        if (u.startsWith("https://spacecode.business/meet")) return false;
-                        try {
-                            startActivity(new Intent(Intent.ACTION_VIEW, req.getUrl()));
-                        } catch (Exception ignored) {
-                        }
-                        return true;
-                    }
-                });
-                web.loadUrl("https://spacecode.business/meet/");   // тёмная тема у календаря по умолчанию
-                body.addView(web, new android.widget.FrameLayout.LayoutParams(-1, -1));
-            }
-            web.setVisibility(android.view.View.VISIBLE);
-        } else if (web != null) {
-            web.setVisibility(android.view.View.GONE);
-            load();
-        }
-    }
-
-    @Override
-    public void onBackPressed() {
-        if (gridView && web != null && web.canGoBack()) web.goBack();
-        else super.onBackPressed();
+        listScroll.setVisibility(gridView ? android.view.View.GONE : android.view.View.VISIBLE);
+        calendar.setVisibility(gridView ? android.view.View.VISIBLE : android.view.View.GONE);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        if (!gridView) load();
+        load();
     }
 
     private void load() {
@@ -168,15 +153,22 @@ public class ProditMeetingsActivity extends Activity {
                 JSONObject o = Prodit.api(this, "action=prodit_meetings", "GET", null);
                 main.post(() -> {
                     items = o.optJSONArray("items");
+                    role = o.optString("role", "");
+                    adminsBtn.setVisibility(role.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+                    if (role.isEmpty()) onlyMine = false;   // обычному пользователю сервер и так отдаёт только его встречи
+                    filter.setVisibility(role.isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
                     show();
                 });
             } catch (Exception e) {
-                main.post(() -> status.setText(Prodit.error(e)));
+                main.post(() -> {
+                    status.setText(Prodit.error(e));
+                    if (gridView) Toast.makeText(this, Prodit.error(e), Toast.LENGTH_LONG).show();   // в календаре строки статуса нет
+                });
             }
         }).start();
     }
 
-    private static Date parse(String iso) {
+    static Date parse(String iso) {
         try {
             SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ROOT);
             return f.parse(iso.replaceAll("\\.\\d+", ""));
@@ -189,6 +181,8 @@ public class ProditMeetingsActivity extends Activity {
         filter.setText(Prodit.t(onlyMine ? "only_mine" : "all"));
         list.removeAllViews();
         if (items == null) return;
+        calendar.setItems(items, onlyMine);
+        java.util.Set<String> seenSeries = new java.util.HashSet<>();   // от серии в списке — только ближайшая дата
         long now = System.currentTimeMillis();
         String lastDay = "";
         int shown = 0;
@@ -202,6 +196,7 @@ public class ProditMeetingsActivity extends Activity {
             if (start == null) continue;
             long end = start.getTime() + m.optInt("minutes", 60) * 60_000L;
             if (end < now) continue;   // прошедшие не показываем
+            if (!m.optString("recur").isEmpty() && !seenSeries.add(m.optString("uid"))) continue;
             shown++;
             Calendar c = Calendar.getInstance();
             c.setTime(start);
@@ -243,11 +238,27 @@ public class ProditMeetingsActivity extends Activity {
             sub.setTextColor(Ui.GRAY);
             sub.setTextSize(13);
             txt.addView(sub);
+            if (!m.optString("recur").isEmpty()) {
+                TextView rep = new TextView(this);
+                rep.setText(recurLabel(m));
+                rep.setTextColor(0xFFB39BFF);
+                rep.setTextSize(13);
+                txt.addView(rep);
+            }
+            if (m.optBoolean("admin_view")) {   // 1.3: чужая встреча, видна только потому, что вы админ
+                TextView note = new TextView(this);
+                note.setText(Prodit.t("admin_note"));
+                note.setTextColor(0xFFB07A00);
+                note.setTextSize(12);
+                note.setPadding(0, Ui.dp(this, 4), 0, 0);
+                txt.addView(note);
+            }
             row.addView(txt, new LinearLayout.LayoutParams(0, -2, 1));
             TextView join = Ui.button(this, Prodit.t("join"), live ? Ui.YELLOW : Ui.WHITE);
             join.setTextSize(14);
             join.setOnClickListener(v -> Prodit.openCall(this, m.optString("room"), m.optString("title")));
             row.addView(join);
+            row.setOnClickListener(v -> card(m));
             row.setOnLongClickListener(v -> {   // ссылка для гостей без приложения
                 String url = m.optString("link");
                 startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain")
@@ -261,6 +272,55 @@ public class ProditMeetingsActivity extends Activity {
         status.setText(shown == 0 ? Prodit.t("no_meetings") : "");
     }
 
+    private static final String[] RECURS = {"", "daily", "weekdays", "weekly", "biweekly", "monthly"};
+
+    private static String recurName(String recur) {
+        return Prodit.t(recur.isEmpty() ? "r_none" : "r_" + recur);
+    }
+
+    /** «↻ Каждую неделю до 01.02.2027» */
+    private static String recurLabel(JSONObject m) {
+        String until = m.optString("until");
+        return "↻ " + recurName(m.optString("recur")) + (until.isEmpty() ? "" : " " + Prodit.t("r_until_short", until));
+    }
+
+    /** Карточка встречи: когда, кто, повтор; «Войти», ссылка для гостей, «Изменить» — организатору и админам. */
+    private void card(final JSONObject m) {
+        Date st = parse(m.optString("start"));
+        if (st == null) return;
+        int p = Ui.dp(this, 20);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(p, Ui.dp(this, 8), p, 0);
+        SimpleDateFormat day = new SimpleDateFormat("EEEE, d MMMM", new Locale(Prodit.lang())), hm = new SimpleDateFormat("HH:mm", Locale.ROOT);
+        StringBuilder t = new StringBuilder(day.format(st)).append(", ").append(hm.format(st)).append(" – ")
+                .append(hm.format(new Date(st.getTime() + m.optInt("minutes", 60) * 60_000L)));
+        if (!m.optString("recur").isEmpty()) t.append("\n").append(recurLabel(m));
+        if (m.optBoolean("admin_view")) t.append("\n").append(Prodit.t("admin_note"));
+        t.append("\n\n").append(Prodit.t("organizer")).append(": ").append(m.optString("organizer", m.optString("organizer_email")));
+        JSONArray es = m.optJSONArray("emails");
+        StringBuilder g = new StringBuilder();
+        for (int i = 0; es != null && i < es.length(); i++)
+            if (!es.optString(i).equalsIgnoreCase(m.optString("organizer_email"))) g.append(g.length() > 0 ? ", " : "").append(es.optString(i));
+        if (g.length() > 0) t.append("\n").append(Prodit.t("participants")).append(": ").append(g);
+        if (!m.optString("note").isEmpty()) t.append("\n\n").append(m.optString("note"));
+        TextView info = new TextView(this);
+        info.setText(t);
+        info.setTextSize(14);
+        box.addView(info);
+        TextView share = pick(this, box);
+        share.setText("🔗 " + Prodit.t("share_link"));
+        share.setOnClickListener(v -> startActivity(Intent.createChooser(new Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_TEXT, m.optString("title") + "\n" + m.optString("link")), Prodit.t("share_link"))));
+        ScrollView sv = new ScrollView(this);
+        sv.addView(box);
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle(m.optString("title")).setView(sv)
+                .setPositiveButton(Prodit.t("join"), (d, w) -> Prodit.openCall(this, m.optString("room"), m.optString("title")))
+                .setNegativeButton(Prodit.t("close"), null);
+        if (m.optBoolean("can_edit")) b.setNeutralButton(Prodit.t("edit"), (d, w) -> createDialog(this, null, null, m, this::load));
+        b.show();
+    }
+
     /** Новая встреча: тема, дата, время, длительность, гости, комментарий → prodit_meet_create. */
     private void create() {
         createDialog(this, null, null, this::load);
@@ -269,6 +329,16 @@ public class ProditMeetingsActivity extends Activity {
     /** Новая встреча: тема, дата, время, длительность, гости, комментарий → prodit_meet_create.
      *  withAuthor — собеседник из личного диалога (его почту сервер подставит сам). */
     static void createDialog(final Activity a, final String withAuthor, final String withName, final Runnable onDone) {
+        createDialog(a, withAuthor, withName, null, onDone);
+    }
+
+    /** edit != null — правка существующей встречи (организатор или админ): prodit_meet_edit, кнопка «Отменить встречу». */
+    static void createDialog(final Activity a, final String withAuthor, final String withName, final JSONObject edit, final Runnable onDone) {
+        createDialog(a, withAuthor, withName, edit, null, onDone);
+    }
+
+    /** start — время новой встречи (нажали на свободное место в календаре). У серии edit — выбранная дата: start в списке. */
+    static void createDialog(final Activity a, final String withAuthor, final String withName, final JSONObject edit, final Calendar start, final Runnable onDone) {
         int p = Ui.dp(a, 20);
         LinearLayout box = new LinearLayout(a);
         box.setOrientation(LinearLayout.VERTICAL);
@@ -278,6 +348,21 @@ public class ProditMeetingsActivity extends Activity {
         final Calendar when = Calendar.getInstance();
         when.add(Calendar.HOUR_OF_DAY, 1);
         when.set(Calendar.MINUTE, 0);
+        when.set(Calendar.SECOND, 0);
+        when.set(Calendar.MILLISECOND, 0);
+        if (start != null) when.setTimeInMillis(start.getTimeInMillis());
+        if (edit != null) {
+            if (edit.optBoolean("admin_view")) {
+                TextView an = new TextView(a);
+                an.setText(Prodit.t("admin_note"));
+                an.setTextColor(0xFFB07A00);
+                an.setTextSize(13);
+                box.addView(an, 0);
+            }
+            title.setText(edit.optString("title"));
+            Date st = parse(edit.optString("start"));
+            if (st != null) when.setTime(st);
+        }
         final TextView date = pick(a, box), time = pick(a, box);
         final Runnable upd = () -> {
             date.setText(Prodit.t("date") + ": " + new SimpleDateFormat("d MMMM yyyy", new Locale(Prodit.lang())).format(when.getTime()));
@@ -294,20 +379,92 @@ public class ProditMeetingsActivity extends Activity {
             upd.run();
         }, when.get(Calendar.HOUR_OF_DAY), when.get(Calendar.MINUTE), true).show());
         final EditText minutes = edit(a, box, Prodit.t("minutes"), InputType.TYPE_CLASS_NUMBER);
-        minutes.setText("60");
+        minutes.setText(edit != null ? String.valueOf(edit.optInt("minutes", 60)) : "60");
+        // повтор: у серии сначала выбираем, что менять — эту дату или всё
+        final boolean series = edit != null && !edit.optString("recur").isEmpty();
+        final String[] scope = {"one"};
+        final String[] recur = {edit != null ? edit.optString("recur") : ""};
+        final String[] until = {edit != null ? edit.optString("until") : ""};
+        final TextView repeatRow = pick(a, box), untilRow = pick(a, box);
+        final Runnable updRepeat = () -> {
+            boolean oneOnly = series && "one".equals(scope[0]);
+            repeatRow.setVisibility(oneOnly ? android.view.View.GONE : android.view.View.VISIBLE);
+            untilRow.setVisibility(oneOnly || recur[0].isEmpty() ? android.view.View.GONE : android.view.View.VISIBLE);
+            repeatRow.setText(Prodit.t("r_repeat") + ": " + recurName(recur[0]));
+            untilRow.setText(Prodit.t("r_until") + ": " + (until[0].isEmpty() ? "—" : until[0]));
+        };
+        repeatRow.setOnClickListener(v -> {
+            String[] names = new String[RECURS.length];
+            for (int i = 0; i < names.length; i++) names[i] = recurName(RECURS[i]);
+            new AlertDialog.Builder(a).setTitle(Prodit.t("r_repeat")).setItems(names, (x, i) -> {
+                recur[0] = RECURS[i];
+                updRepeat.run();
+            }).show();
+        });
+        untilRow.setOnClickListener(v -> {
+            Calendar u = (Calendar) when.clone();
+            DatePickerDialog dp = new DatePickerDialog(a, (x, y, mo, d) -> {
+                until[0] = String.format(Locale.ROOT, "%04d-%02d-%02d", y, mo + 1, d);
+                updRepeat.run();
+            }, u.get(Calendar.YEAR), u.get(Calendar.MONTH), u.get(Calendar.DAY_OF_MONTH));
+            dp.setButton(AlertDialog.BUTTON_NEUTRAL, Prodit.t("r_no_end"), (x, w) -> {
+                until[0] = "";
+                updRepeat.run();
+            });
+            dp.show();
+        });
+        if (series) {
+            final TextView scopeRow = pick(a, box);
+            box.removeView(scopeRow);
+            box.addView(scopeRow, edit.optBoolean("admin_view") ? 1 : 0);
+            final String[] codes = {"one", "all"}, names = {Prodit.t("r_one"), Prodit.t("r_all")};
+            scopeRow.setText(Prodit.t("r_scope") + ": " + names[0]);
+            scopeRow.setOnClickListener(v -> new AlertDialog.Builder(a).setTitle(Prodit.t("r_scope")).setItems(names, (x, i) -> {
+                scope[0] = codes[i];
+                scopeRow.setText(Prodit.t("r_scope") + ": " + names[i]);
+                updRepeat.run();
+            }).show());
+        }
+        updRepeat.run();
         final EditText guests = edit(a, box, Prodit.t("guests"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS);
         guests.setSingleLine(false);
         final EditText note = edit(a, box, Prodit.t("note"), InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+        if (edit != null) {   // гости без организатора — его почту сервер добавит сам
+            StringBuilder g = new StringBuilder();
+            JSONArray es = edit.optJSONArray("emails");
+            String org = edit.optString("organizer_email").toLowerCase(Locale.ROOT);
+            for (int i = 0; es != null && i < es.length(); i++)
+                if (!es.optString(i).equalsIgnoreCase(org)) g.append(g.length() > 0 ? ", " : "").append(es.optString(i));
+            guests.setText(g);
+            note.setText(edit.optString("note"));
+        }
         ScrollView sv = new ScrollView(a);
         sv.addView(box);
-        AlertDialog dlg = new AlertDialog.Builder(a).setTitle(Prodit.t("new_meeting")).setView(sv)
-                .setPositiveButton(Prodit.t("create"), null).setNegativeButton(Prodit.t("cancel"), null).create();
-        dlg.setOnShowListener(d -> dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+        AlertDialog.Builder bld = new AlertDialog.Builder(a).setTitle(Prodit.t(edit != null ? "edit_meeting" : "new_meeting")).setView(sv)
+                .setPositiveButton(Prodit.t(edit != null ? "save" : "create"), null).setNegativeButton(Prodit.t("cancel"), null);
+        if (edit != null) bld.setNeutralButton(Prodit.t("cancel_meeting"), null);
+        AlertDialog dlg = bld.create();
+        dlg.setOnShowListener(d -> {
+          if (edit != null) dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener(v -> new AlertDialog.Builder(a)
+                .setMessage(Prodit.t(!series ? "confirm_cancel" : "one".equals(scope[0]) ? "r_confirm_one" : "r_confirm_all"))
+                .setPositiveButton(Prodit.t("cancel_meeting"), (x, y) -> {
+                    JSONObjectBuilder req = new JSONObjectBuilder().put("uid", edit.optString("uid")).put("cancel", true);
+                    if (series) req.put("occurrence", edit.optString("start")).put("scope", scope[0]);
+                    send(a, req.o, true, dlg, onDone, Prodit.t("cancelled"));
+                })
+                .setNegativeButton(Prodit.t("cancel"), null).show());
+          dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
             JSONArray em = new JSONArray();
             for (String s : guests.getText().toString().split("[,;\\s]+"))
                 if (s.contains("@")) em.put(s.trim().toLowerCase(Locale.ROOT));
-            if (title.getText().toString().trim().isEmpty() || (em.length() == 0 && withAuthor == null)) {
+            if (title.getText().toString().trim().isEmpty() || (em.length() == 0 && withAuthor == null && edit == null)) {
                 Toast.makeText(a, Prodit.t("need_title"), Toast.LENGTH_LONG).show();
+                return;
+            }
+            final boolean oneOnly = series && "one".equals(scope[0]);
+            if (!oneOnly && !recur[0].isEmpty() && !until[0].isEmpty()
+                    && until[0].compareTo(new SimpleDateFormat("yyyy-MM-dd", Locale.ROOT).format(when.getTime())) < 0) {
+                Toast.makeText(a, Prodit.t("r_bad_until"), Toast.LENGTH_LONG).show();
                 return;
             }
             v.setEnabled(false);
@@ -317,12 +474,20 @@ public class ProditMeetingsActivity extends Activity {
                 try {
                     SimpleDateFormat iso = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssXXX", Locale.ROOT);
                     iso.setTimeZone(TimeZone.getDefault());
-                    Prodit.api(a, "action=prodit_meet_create", "POST", new JSONObject()
+                    JSONObject req = new JSONObject()
                             .put("title", title.getText().toString().trim()).put("start", iso.format(when.getTime()))
                             .put("tz", TimeZone.getDefault().getID())
                             .put("duration", Math.max(15, parseInt(minutes.getText().toString(), 60)))
-                            .put("emails", em).put("with", withAuthor == null ? "" : withAuthor).put("note", note.getText().toString().trim()).put("lang", Prodit.lang()));
-                    msg = Prodit.t("created");
+                            .put("emails", em).put("note", note.getText().toString().trim()).put("lang", Prodit.lang());
+                    if (series) req.put("occurrence", edit.optString("start")).put("scope", scope[0]);
+                    if (!oneOnly) req.put("recur", recur[0]).put("until", recur[0].isEmpty() ? "" : until[0]);
+                    if (edit != null) {
+                        Prodit.api(a, "action=prodit_meet_edit", "POST", req.put("uid", edit.optString("uid")));
+                        msg = Prodit.t("saved");
+                    } else {
+                        Prodit.api(a, "action=prodit_meet_create", "POST", req.put("with", withAuthor == null ? "" : withAuthor));
+                        msg = Prodit.t("created");
+                    }
                     ok = true;
                 } catch (Exception e) {
                     msg = Prodit.error(e);
@@ -338,8 +503,147 @@ public class ProditMeetingsActivity extends Activity {
                     }
                 });
             }).start();
-        }));
+          });
+        });
         dlg.show();
+    }
+
+    /** Отмена встречи (prodit_meet_edit cancel) в фоне; результат — тостом. */
+    private static void send(Activity a, JSONObject req, boolean close, AlertDialog dlg, Runnable onDone, String okMsg) {
+        new Thread(() -> {
+            String msg;
+            boolean ok = false;
+            try {
+                Prodit.api(a, "action=prodit_meet_edit", "POST", req);
+                msg = okMsg;
+                ok = true;
+            } catch (Exception e) {
+                msg = Prodit.error(e);
+            }
+            final String m = msg;
+            final boolean done = ok;
+            a.runOnUiThread(() -> {
+                Toast.makeText(a, m, Toast.LENGTH_LONG).show();
+                if (done && close) {
+                    dlg.dismiss();
+                    if (onDone != null) onDone.run();
+                }
+            });
+        }).start();
+    }
+
+    /** JSONObject.put бросает checked JSONException — обёртка для лямбд. */
+    private static final class JSONObjectBuilder {
+        final JSONObject o = new JSONObject();
+
+        JSONObjectBuilder put(String k, Object v) {
+            try {
+                o.put(k, v);
+            } catch (Exception ignored) {
+            }
+            return this;
+        }
+    }
+
+    // ---------- 1.3: админы ----------
+
+    /** Список админов; главные админы добавляют и снимают (prodit_admins / prodit_admin_set). */
+    private void admins() {
+        new Thread(() -> {
+            try {
+                JSONObject o = Prodit.api(this, "action=prodit_admins", "GET", null);
+                main.post(() -> adminsDialog(o));
+            } catch (Exception e) {
+                main.post(() -> Toast.makeText(this, Prodit.error(e), Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    private void adminsDialog(JSONObject o) {
+        final boolean isSuper = "super".equals(o.optString("role"));
+        int p = Ui.dp(this, 20);
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(p, Ui.dp(this, 8), p, 0);
+        TextView hint = new TextView(this);
+        hint.setText(Prodit.t("admins_hint"));
+        hint.setTextColor(Ui.GRAY);
+        hint.setTextSize(13);
+        box.addView(hint);
+        TextView mh = new TextView(this);
+        mh.setText(Prodit.t("main_admins"));
+        mh.setTypeface(Typeface.DEFAULT_BOLD);
+        mh.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
+        box.addView(mh);
+        JSONArray sup = o.optJSONArray("super");
+        for (int i = 0; sup != null && i < sup.length(); i++) {
+            TextView t = new TextView(this);
+            t.setText("★ " + sup.optString(i));
+            t.setPadding(0, Ui.dp(this, 2), 0, Ui.dp(this, 2));
+            box.addView(t);
+        }
+        TextView ah = new TextView(this);
+        ah.setText(Prodit.t("admins"));
+        ah.setTypeface(Typeface.DEFAULT_BOLD);
+        ah.setPadding(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
+        box.addView(ah);
+        JSONArray adm = o.optJSONArray("admins");
+        final AlertDialog[] self = new AlertDialog[1];
+        if (adm == null || adm.length() == 0) {
+            TextView t = new TextView(this);
+            t.setText(Prodit.t("no_admins"));
+            t.setTextColor(Ui.GRAY);
+            box.addView(t);
+        }
+        for (int i = 0; adm != null && i < adm.length(); i++) {
+            final String email = adm.optJSONObject(i).optString("email");
+            LinearLayout r = new LinearLayout(this);
+            r.setGravity(Gravity.CENTER_VERTICAL);
+            TextView t = new TextView(this);
+            t.setText(email);
+            r.addView(t, new LinearLayout.LayoutParams(0, -2, 1));
+            if (isSuper) {
+                TextView rm = Ui.button(this, Prodit.t("remove"), Ui.WHITE);
+                rm.setTextSize(13);
+                rm.setOnClickListener(v -> new AlertDialog.Builder(this).setMessage(Prodit.t("remove_admin", email))
+                        .setPositiveButton(Prodit.t("remove"), (x, y) -> setAdmin(email, false, self[0]))
+                        .setNegativeButton(Prodit.t("cancel"), null).show());
+                r.addView(rm);
+            }
+            box.addView(r, new LinearLayout.LayoutParams(-1, -2));
+        }
+        final EditText add = isSuper ? edit(this, box, Prodit.t("admin_email"),
+                InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS) : null;
+        ScrollView sv = new ScrollView(this);
+        sv.addView(box);
+        AlertDialog.Builder b = new AlertDialog.Builder(this).setTitle("👥 " + Prodit.t("admins")).setView(sv)
+                .setNegativeButton(Prodit.t("cancel"), null);
+        if (isSuper) b.setPositiveButton(Prodit.t("add"), null);
+        self[0] = b.create();
+        if (isSuper) self[0].setOnShowListener(d -> self[0].getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            String e = add.getText().toString().trim().toLowerCase(Locale.ROOT);
+            if (!e.contains("@")) {
+                add.setError(Prodit.t("admin_email"));
+                return;
+            }
+            setAdmin(e, true, self[0]);
+        }));
+        self[0].show();
+    }
+
+    private void setAdmin(String email, boolean on, AlertDialog dlg) {
+        new Thread(() -> {
+            try {
+                JSONObject o = Prodit.api(this, "action=prodit_admin_set", "POST", new JSONObject().put("email", email).put("on", on));
+                main.post(() -> {
+                    if (dlg != null) dlg.dismiss();
+                    adminsDialog(o);
+                    load();
+                });
+            } catch (Exception e) {
+                main.post(() -> Toast.makeText(this, Prodit.error(e), Toast.LENGTH_LONG).show());
+            }
+        }).start();
     }
 
     private static int parseInt(String s, int def) {
